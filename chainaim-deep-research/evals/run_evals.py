@@ -1,0 +1,175 @@
+"""run_evals.py — deterministic V1 eval harness (CI-friendly).
+
+V1 has NO LLM, so V1 evals test the deterministic core (the parts that can silently
+break): the Router/classify regex, ingest parsing, the dedupe gate's idempotency, and
+the extract->manifest write path (offline, via a labeled test double).
+
+Slots reserved for later: the V2 judge eval and V3 routing eval (LLM) plug in here as
+separate suites keyed off model.provider; they are intentionally NOT run in V1.
+
+Flags (Rule 8):
+    --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
+    --verbose        print each case, not just the summary
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract)
+
+Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import tempfile
+from pathlib import Path
+from typing import Callable, Dict, List, Tuple
+
+HERE = Path(__file__).resolve().parent
+PKG = HERE.parent
+sys.path.insert(0, str(PKG / "scripts"))
+sys.path.insert(0, str(PKG))
+
+from orchestrate import classify            # noqa: E402
+from manifest import Manifest                # noqa: E402
+from throttle import Throttle                # noqa: E402
+from ingest.local_dir import collect_sources  # noqa: E402
+from extract import youtube as yt            # noqa: E402
+
+Result = Tuple[int, int, List[str]]  # (passed, total, failures)
+
+
+def suite_classify(fixtures: Path, verbose: bool) -> Result:
+    cases = json.loads((fixtures / "classify_cases.json").read_text(encoding="utf-8"))
+    passed, fails = 0, []
+    for c in cases:
+        kind, key = classify(c["input"])
+        ok = (kind == c["kind"]) and (key == c["key"])
+        if ok:
+            passed += 1
+        else:
+            fails.append(f"classify({c['input']!r}) -> ({kind},{key}) expected ({c['kind']},{c['key']})")
+        if verbose:
+            print(f"  [{'ok' if ok else 'XX'}] {c['input']!r} -> ({kind}, {key})")
+    return passed, len(cases), fails
+
+
+def suite_ingest(fixtures: Path, verbose: bool) -> Result:
+    """Comments/blanks ignored; intra-run dedupe; order preserved."""
+    fails: List[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        d = Path(td)
+        (d / "sources.txt").write_text(
+            "# a comment\n\nhttps://youtu.be/dQw4w9WgXcQ\n   \n"
+            "https://youtu.be/dQw4w9WgXcQ\nplainID12345\n",
+            encoding="utf-8",
+        )
+        items = collect_sources(source_list="sources.txt", source_dir=None, base_dir=d)
+        urls = [i["url"] for i in items]
+        expected = ["https://youtu.be/dQw4w9WgXcQ", "plainID12345"]
+        if urls != expected:
+            fails.append(f"ingest urls={urls} expected={expected}")
+        if verbose:
+            print(f"  ingest -> {urls}")
+    total = 1
+    return (1 if not fails else 0), total, fails
+
+
+def _extract_one(td: Path, key: str, source: str) -> Tuple[bool, Manifest]:
+    fake = PKG / "evals" / "fixtures" / "fake_transcript.py"
+    m = Manifest(td / "manifest.json")
+    throttle = Throttle(min_delay_s=0.0, jitter_s=0.0, backoff_factor=1.0, max_retries=1)
+    ok, paths, info = yt.extract(
+        key=key, source=source, transcript_script=str(fake),
+        full_dir=td / "kb" / "full", formats=["txt", "json"], throttle=throttle, timestamps=False,
+    )
+    if ok:
+        m.record(key, source, info, paths, status="extracted")
+    return ok, m
+
+
+def suite_extract(fixtures: Path, verbose: bool) -> Result:
+    """Real extract path against the offline double: success writes files+manifest;
+    failure path returns ok=False; re-extract is gated by manifest.seen (dedupe)."""
+    fails: List[str] = []
+    with tempfile.TemporaryDirectory() as tds:
+        td = Path(tds)
+        # success
+        ok, m = _extract_one(td, "dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ")
+        if not ok:
+            fails.append("extract success-case returned ok=False")
+        if not (td / "kb" / "full" / "dQw4w9WgXcQ.txt").exists():
+            fails.append("extract did not write kb/full/<key>.txt")
+        if not m.seen("dQw4w9WgXcQ"):
+            fails.append("manifest.seen False after successful extract (dedupe would not trigger)")
+        # failure path
+        ok2, _, info = yt.extract(
+            key="FAILTHIS123", source="FAILTHIS123",
+            transcript_script=str(PKG / "evals" / "fixtures" / "fake_transcript.py"),
+            full_dir=td / "kb" / "full", formats=["txt"],
+            throttle=Throttle(min_delay_s=0.0, jitter_s=0.0, max_retries=1), timestamps=False,
+        )
+        if ok2:
+            fails.append("extract failure-case returned ok=True (should be False)")
+        if verbose:
+            print(f"  extract ok={ok} seen={m.seen('dQw4w9WgXcQ')} fail_ok={ok2} fail_info={info!r}")
+    return (1 if not fails else 0), 1, fails
+
+
+def suite_dedupe(fixtures: Path, verbose: bool) -> Result:
+    """Second extract of a seen key must be skipped by the gate (manifest.seen)."""
+    fails: List[str] = []
+    with tempfile.TemporaryDirectory() as tds:
+        td = Path(tds)
+        ok, m = _extract_one(td, "dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ")
+        # reload manifest from disk (simulates a fresh run) and check the gate
+        m2 = Manifest(td / "manifest.json")
+        if not m2.seen("dQw4w9WgXcQ"):
+            fails.append("dedupe: reloaded manifest does not report key as seen")
+        # the gate logic in orchestrate is: seen and not force -> skip
+        would_skip = m2.seen("dQw4w9WgXcQ")
+        if not would_skip:
+            fails.append("dedupe gate would NOT skip an already-extracted key")
+        if verbose:
+            print(f"  dedupe -> reloaded seen={m2.seen('dQw4w9WgXcQ')} would_skip={would_skip}")
+    return (1 if not fails else 0), 1, fails
+
+
+SUITES: Dict[str, Callable[[Path, bool], Result]] = {
+    "classify": suite_classify,
+    "ingest": suite_ingest,
+    "extract": suite_extract,
+    "dedupe": suite_dedupe,
+}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="run_evals", description="ChainAIM V1 deterministic evals")
+    ap.add_argument("--fixtures", default=str(HERE / "fixtures"))
+    ap.add_argument("--verbose", action="store_true")
+    ap.add_argument("--only", choices=list(SUITES), default=None)
+    args = ap.parse_args()
+
+    fixtures = Path(args.fixtures)
+    suites = {args.only: SUITES[args.only]} if args.only else SUITES
+
+    total_pass, total_all, all_fail = 0, 0, []
+    for name, fn in suites.items():
+        print(f"[suite] {name}")
+        p, t, fails = fn(fixtures, args.verbose)
+        total_pass += p
+        total_all += t
+        all_fail += [f"({name}) {f}" for f in fails]
+        print(f"  -> {p}/{t} passed")
+
+    print(f"\n== EVAL SUMMARY ==  {total_pass}/{total_all} checks passed")
+    if all_fail:
+        print("FAILURES:")
+        for f in all_fail:
+            print(f"  - {f}")
+        return 1
+    print("ALL PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

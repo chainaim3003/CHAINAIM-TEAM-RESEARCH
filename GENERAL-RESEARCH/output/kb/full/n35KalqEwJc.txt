@@ -1,0 +1,482 @@
+In this video, I'm going to cover one of
+my favorite ways to optimize my
+day-to-day coding workflow, and that's
+by using Git Work Trees with Claude. So,
+typically, if you're working with
+Claude, you'll open a session, give it a
+task, review it, and continue to iterate
+until that task is completed. But what
+are you doing when your LLM is actively
+thinking and working? Sometimes it can
+feel like you're just twiddling your
+thumbs, waiting for something else to
+do. But if you look at your backlog,
+chances are there's several tasks that
+aren't actually dependent on one
+another. So there's no reason that one
+task has to finish before you start the
+next. But if you open two terminals and
+you run claude code in both, you do get
+to work on both tasks, but you'll
+quickly realize that just makes a mess.
+When two agents are in the same working
+directory, they read and write to the
+same files. So as each agent is working,
+the code is changing right in front of
+them, and they have no idea why or how.
+And all of a sudden, everything just
+breaks. So what's actually the solution
+here? Well, it's not a change in cloud
+code or any other LLM that you're
+working with, but it's a change in how
+you're using GitHub. A Git repository
+has two things. The object store, which
+has all your commits, all your history,
+all your branches, and then the working
+tree, which are the files that you
+actually see on disk when you open your
+editor, meaning the files that are on
+your machine. Normally, these are
+coupled, one repo, one working tree. You
+check out a branch, your files change to
+match that branch, and you can only be
+on one branch at a time in one directory
+on your computer. But git work trees are
+how you decouple them. So you still have
+one object store. So you have one repo,
+one git directory, one history, but now
+you have multiple working trees. And
+each working tree is a separate
+directory on your computer checked out
+to a different branch. So it's
+completely independent at the file
+level. and changes in one working tree
+do not affect any other. You can think
+of it this way. Your main repo is the
+source of truth. And a work tree is like
+a satellite. It's a separate checkout of
+the same repo on a different branch in a
+different folder. So they share the same
+history and they share the same remotes,
+but they don't share files on your
+computer storage. So as each agent
+builds out its own feature that it's
+tasked with, it's not affecting any
+other. Now, let's walk through how to
+actually do this in practice. So, first
+we're going to use the git CLI to create
+and manage work trees. So, navigate into
+a directory that has an active git repo.
+So, I'm currently in my AI agent project
+and we're just going to type in get work
+tree list.
+And this is going to list out all of the
+work trees that you have associated with
+this repository. Now, you can see I
+already have some work trees connected
+here. This is because it's my current
+project at work. So, by the end of this
+video, you'll actually get a sneak peek
+into what my screen looks like when I'm
+deep into building a real project. But
+if you're following along, you won't
+have any work choose here. It'll just
+return main. So, let's make your first
+one. But before we make your first one,
+I'm just going to give some additional
+context of what we're actually typing in
+here. So, when I ask get workree list,
+it returns every workree that's
+connected to my current repository. And
+this is the directory that that code is
+on on my machine. So each of these
+directories are where the files live for
+each corresponding workree. And then
+here you can see each of these are the
+branches that are associated with each
+work tree. So you can see here, as we
+talked about earlier, each work tree
+does have its own directory on your
+local machine because as it's building
+out a feature, it's going to be able to
+update those local files for the
+specific branch and not interact with
+other agents that are running working in
+different directories. So now if I type
+in get status,
+sorry, not get status. If I type in get
+branch,
+you're going to see all of the branches
+that are currently associated with the
+repository that I have. So everything
+that's teal is actually a branch that is
+open but in a different directory with a
+different work tree. And here in this
+directory, I have main open as my
+branch. And then these white branches
+are branches that I have locally, but I
+don't have them open anywhere in a work
+tree. Now, you can probably see a theme
+here with naming. I like to have all of
+my working directories start with the
+name of the project. So then when I type
+ls into my machine, all of the work
+trees that I currently have are going to
+show up in one place. So it's pretty
+easy to find. And then I like to name
+each work tree corresponding to the
+specific feature that I want to
+implement. So that way when I'm working
+with multiple terminals open and I'm
+working on multiple features at once,
+I'm not going to get confused what's
+happening where and I'm also going to
+remember the exact feature that I'm
+working on and make sure that that
+feature doesn't overlap with any of the
+work that I'm doing on another branch.
+And then once that feature is done, I'm
+going to be able to commit that work and
+then merge it to either your staging
+branch or your main branch or whatever
+workflow you have set up. Now that's
+just how I like to name things.
+Obviously, you can name this however you
+want. Um, this is just a method that I
+found was really helpful. Now that we've
+gone over that, it's time to actually
+create your first work tree. So, in your
+directory, you're going to type in get
+workree ad.
+Now, we're going to go back one
+directory because you want to get out of
+this project. So, now you have a whole
+another folder that's being created just
+back one directory so they don't
+overlap. So I'll name it AI agent. And
+for this work tree, we're just going to
+implement a new endpoint. So I'll make
+it endpoint.
+And now we're going to create a new
+branch. So if I do dashb
+and I'll do new endpoint.
+And then I'm going to specify what
+branch I want to create this branch off
+of. So I currently work with and staging
+and I'm updating staging right now. So,
+I'm just going to make this. So, I'm
+just going to make this branch off of my
+staging branch. So, we'll do
+origin-staging.
+If you're currently working with just a
+main branch, you can do origin slain.
+And
+now you can see it's preparing the work
+tree. It created a new branch and it's
+set to track against my staging branch.
+And the head is now at the last commit
+that I had to my staging branch. So now
+we can type again get status.
+Sorry, not get status. I keep doing
+that. We're going to type in get branch.
+And
+here you can see I have a new branch
+created. So this is my new endpoint and
+it's teal because it's connected to a
+new work tree that I just created. So if
+I type in get workree list, we should be
+able to see this new work tree as part
+of the list. And you can see it here,
+the AI agent endpoint. Now, let's walk
+through an example of actually using
+these work trees in practice so you can
+get a feel of what an optimized workflow
+look like and how you can adjust your
+current coding workflow. So, here you
+can see I have a few different work
+trees and branches already set up and
+we're going to work through two of them.
+So, first let me open a new tab here and
+I'm going to cd back one directory
+because I was in that main branch
+directory. And if I type in ls, it's
+going to show me all of the directories
+in this folder. And just showing why I
+like naming all of my work trees with
+the name of the project in the beginning
+because now you can see all of the work
+trees I have are conveniently located in
+one spot. So now let's CD into
+the dashboard feature. And that's going
+to be one thing that I'm going to be
+working on. Now I'm going to open up
+Codeex. I've recently been using Codeex
+a lot more often than Claude. It's going
+to work exactly the same if you're using
+Claude. Um, either way, your preferred
+LLM here. And now I opened up my codec
+session within my dashboard creation
+workree. Now, I already pre-wrote out
+what step I wanted to add in to this
+feature just so you didn't have to
+watch me type this all out cuz it's
+pretty long. But basically, it's just
+adding in the capability for this
+dashboard to interact with DeFi Lama. So
+that's the next feature that I'm adding
+into this dashboard. And since this is a
+backend update, I know that it's not
+going to affect the other feature that
+I'm going to be working on in my next
+work tree, which we'll go over in a
+second. But here you can see it's just
+specifying that I want to add in market
+context for the dashboard that I'm
+creating. and it's going to give some
+detailed information so my agent knows
+exactly what it needs to do for this new
+dashboard feature in my AI agent
+project. Now, while that's running, I'm
+going to open up a new tab and we're
+going to split screen this so we can
+keep tabs on what's going on on both
+sides here.
+Okay. So, now I'm going to get out of
+this work tree and we'll ls again. And
+I'm going to also work on the HubSpot
+access that I'm creating for my AI
+agent. So we'll cd over there
+and then once again I'm going to open up
+codeex.
+Now here you can see why I like to name
+the directories the same as the feature
+that I'm implementing because you can
+see in this terminal it's labeled
+HubSpot access and this terminal is
+labeled dashboard creation. So now,
+here's a good example of why you want to
+make sure you're always reading what
+Codeex or Claude or whoever is prompting
+you to do next. Because now this is
+saying to switch to a new branch for
+just Defy Llama, which I want this to
+actually be part of the dashboard that
+I'm creating and have this all in one
+branch in one feature. So let's just
+double check and make sure this is on
+the correct branch. So this is on the
+dashboard creation branch. So we're just
+going to tell this no, I don't want a
+separate branch. I want this all
+together.
+So, we'll say stay on the
+Okay, so now we have our dashboard
+working on our left side and And then
+here I'm going to work on updating the
+UI for the HubSpot access of this agent.
+Now I already have this running locally.
+So I'm actually going to pull this up.
+And this I ran locally directly from
+this AI agent HubSpot access directory.
+So I know that this is connected to my
+HubSpot access branch and this HubSpot
+access workree. So as I update on this
+side, my UI is going to update. So,
+one of the simple changes that I want to
+make here is just adding a select all or
+unselect all box in the HubSpot card.
+So, we're just going to add that
+Okay. So, we're going to leave this UI
+on the back. We're going to have our
+HubSpot agent running and then we're
+also going to have our dashboard
+running. So, usually if I have both of
+those running and I still have some time
+left, I'll probably switch over to
+another branch and start working on
+that, too. But for this video, just for
+simplicity, you can see that we have two
+different workflows happening at once
+with two different features that don't
+overlap each other. And they're existing
+in two different directories here. So
+the local code that is being worked on
+by each agent is going to be separate,
+stored in separate locations on my
+computer. And that's what's enabling
+both of these to be working together. So
+once we have these updates, I'm going to
+show you how to push and merge when you
+get to get. Um,
+but for now, we're just going to let
+these run and then I'll speed everything
+up in the video and show you the next
+steps. So now you can see that both of
+these sessions have completed. So if we
+look at the right session, you can see
+that the UI update has been made. So, if
+I go back to what I'm running locally,
+you can see here is my select all button
+that has been added and we can test it
+out. It works as expected. So, this
+side's good to go. Now, on this side, it
+was a much more complex addition by
+adding the D5 Lama integration into the
+dashboard. So, this I'm going to have to
+write some tests and actually test it
+out on my side to make sure everything
+works before I actually commit this. But
+for this video, we'll skip ahead. So I'm
+going to open another tab on both sides.
+And you can see I'm in the respective
+folder for each of these work trees. Now
+I'm just going to type in get status to
+show that these have worked on two
+different local directories and the work
+has not affected each other. So if I
+type in get status on each side,
+you can see the updates are very
+different. So on the left we have mainly
+all backend updates working with our PHP
+files and then on the right we have our
+front-end updates with our HTML CSS
+files. So that's what it looks like with
+GitHub. And if I commit this change, um
+now I'll commit this change and I'll
+open GitHub so you see what it looks
+like. So I'll go to my AI agent project
+and we're going to go to the branches.
+And this one I'm working on the HubSpot
+access branch. And you can see that
+there was a commit just now.
+And I'm working with my staging
+environment. So I'm just going to make a
+PR to staging and be able to merge this
+new update. And you can see each of
+these are working on their own branch.
+And you'll be able to merge each feature
+into its next branch um once you commit
+and push to GitHub. And just to be
+aware, there may be merge conflicts that
+you're going to have to resolve if
+you're working with multiple agents and
+some of the files do happen to overlap.
+So that's one thing to keep note of.
+Now, now that you're able to see an
+example workflow in action, let's talk
+about some more advanced patterns when
+using work trees with Claude or Codeex.
+So first we'll start with the MD file in
+workspaces. So with claude you have a
+root claude MD. With codeex you're going
+to have an agents.md.
+So let's just show an example here. I'm
+going to open my code and I have my
+agents MD file for this project to work
+with codeex. And you can see
+you can see that it just defines
+additional instructions about this
+project to be able to give it as context
+for the LM that I'm working with. So
+because this exists, this means that the
+project context is automatically
+available in every single work tree that
+you set up without any extra setup. So
+one MD file for agent context is going
+to benefit all of the agents that you
+have running in multiple sessions. But
+where this gets interesting is you can
+add a workree specific MD file for tasks
+that need additional context. So you
+just create another claude MD or agents
+MD if you're working with codecs in the
+work tree route with additional context
+and this gives scoped context for scoped
+work when you're working with a specific
+feature in a work tree. Now the next
+pattern is my favorite one which is
+agent versus agent comparison. In my
+opinion the most useful work tree
+pattern is actually not parallelism but
+comparison with multiple agents. So how
+this works is you give two agents the
+exact same task in two separate work
+trees. So you review both outputs and
+you pick the better one and discard the
+other. This is really useful for
+architecture decisions where there are
+multiple valid approaches and you want
+to see both implemented before
+committing to a final design. So this
+essentially gives you a free
+architecture exploration because the
+cost of exploring two approaches is not
+double the time in this case. It's the
+same time with half the opportunity
+cost. Now, the next pattern I'm going to
+talk about is using T-Mux with your
+agent. So, if you run multiple agents
+regularly, T-Mux is worth learning. It
+lets you create named sessions for each
+work tree, detach, and reattach without
+losing the agents context, and you can
+see all of the active sessions at a
+glance. So, let me go over the basic
+setup. I'll navigate back to my terminal
+and you can check to see if you have
+T-Mox on your computer here. If you
+don't, you can just install with Brew
+Install Brew Install T-Mux and you'll be
+good to go. Now, we're going to create a
+named session for each of these
+workflows. So, we'll do T-Mox
+new session.
+And then we're going to name the
+session. So, we'll name this one
+HubSpot.
+And then you're going to specify where
+you want this session to exist based off
+of the current directory that you're in.
+So I'm currently in my AI agent
+directory. I want it to exist within the
+AI agent HubSpot access directory. So
+I'm going to do dash c and we're going
+to go back and then do AI
+agent.
+Okay, so now you can see it autocreated
+a persistent session here inside my AI
+agent HubSpot access. So now if I go
+back to my AI agent directory, I can
+type in T-Mux LS and that's going to
+show me all of my active sessions and
+whether it's attached or detached. So
+now with this running, your agent
+sessions persist even if you close a
+terminal. So you can check in on any
+agent at any time. And this is a setup
+that I'm moving towards in my day-to-day
+workflow. So, you have a named Teamwork
+session per workree, each with its own
+cloud code instance, and each on its own
+task. Now, let's just recap when to use
+a work tree and when not to. So, I'll
+use a work tree if there are two or more
+tasks that I want to do today that don't
+share the same file. or if the task is
+risky enough that I want to see two
+different approaches before actually
+committing to one then again I'll use a
+work tree. Now if a single task spans
+the whole codebase then I'd recommend
+just sticking to a single session that
+day and if the task is more of an
+exploratory task then again I'd say keep
+it to a single session and let the agent
+be able to roam throughout the codebase.
+But overall, work trees have helped me
+optimize my daily workflow and just
+become a lot more efficient. So, I hope
+it helps you as much as it's helped me.
+Let me know any questions or comments
+you have below and stay tuned for more
+AI videos.

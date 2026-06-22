@@ -1,0 +1,12 @@
+[
+  { "input": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "kind": "youtube", "key": "dQw4w9WgXcQ" },
+  { "input": "https://youtu.be/dQw4w9WgXcQ",                "kind": "youtube", "key": "dQw4w9WgXcQ" },
+  { "input": "https://youtube.com/embed/dQw4w9WgXcQ",       "kind": "youtube", "key": "dQw4w9WgXcQ" },
+  { "input": "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s", "kind": "youtube", "key": "dQw4w9WgXcQ" },
+  { "input": "dQw4w9WgXcQ",                                 "kind": "youtube", "key": "dQw4w9WgXcQ" },
+  { "input": "  dQw4w9WgXcQ  ",                             "kind": "youtube", "key": "dQw4w9WgXcQ" },
+  { "input": "https://github.com/anthropics/anthropic-sdk-python", "kind": "unknown", "key": null },
+  { "input": "https://example.com/some-article",           "kind": "unknown", "key": null },
+  { "input": "not a url at all",                           "kind": "unknown", "key": null },
+  { "input": "shortid123",                                "kind": "unknown", "key": null }
+]

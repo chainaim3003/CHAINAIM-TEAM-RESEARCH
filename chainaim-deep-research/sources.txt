@@ -1,0 +1,8 @@
+# ChainAIM V1 source list — one source per line.
+# Lines starting with '#' are comments; blank lines ignored.
+# Accepts full YouTube URLs (watch?v=, youtu.be/, embed/) or a bare 11-char video id.
+# Non-YouTube lines are skipped in V1 (Drive/GitHub come in V3).
+#
+# Replace the examples below with your real sources:
+# https://www.youtube.com/watch?v=XXXXXXXXXXX
+# https://youtu.be/XXXXXXXXXXX

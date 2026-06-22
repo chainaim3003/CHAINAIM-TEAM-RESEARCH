@@ -1,0 +1,18 @@
+# Nested git repo — agent-skills is its OWN repository (.git inside it).
+# Ignore it here so `git add .` doesn't embed it as a gitlink. (It stays a
+# separate repo on disk; manage/commit it from inside agent-skills/ itself.)
+agent-skills/
+
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+
+# Generated KB output (transcripts, manifest, ledger). UNCOMMENT the next line if you
+# do NOT want the extracted knowledge base tracked in git. Leave commented to keep it.
+# GENERAL-RESEARCH/output/

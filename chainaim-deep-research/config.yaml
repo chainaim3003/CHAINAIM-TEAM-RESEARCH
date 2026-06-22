@@ -1,0 +1,58 @@
+# ChainAIM Deep Research Agent — config.yaml
+# SHARED, language-independent. Keys here are the PUBLIC INTERFACE (see
+# DESIGN/01-architecture-contract.md section 3). Python and TypeScript runtimes
+# both consume this file identically.
+#
+# PATH RULES:
+#   - Relative paths are anchored to THIS package dir (the folder holding config.yaml),
+#     not your shell's current directory — so runs are reproducible from any cwd.
+#   - Absolute paths are used as-is.
+#   - `../GENERAL-RESEARCH/...` therefore points at the GENERAL-RESEARCH folder that sits
+#     one level up, beside this package, under the repo root CHAINAIM-TEAM-RESEARCH.
+
+input:
+  # Optional single list file (URLs / 11-char IDs, one per line; '#' comments ok).
+  # null = don't use a single list file; rely on source_dir below.
+  source_list: null
+  # Directory scanned for *.txt / *.md files, each containing source lines.
+  # Local working input area (relative -> ../GENERAL-RESEARCH/input).
+  source_dir: "../GENERAL-RESEARCH/input"
+
+output:
+  # KB + manifest + ledger root. Local working output area
+  # (relative -> ../GENERAL-RESEARCH/output). Was the repo root; kept here for easy revert:
+  # kb_dir: "C:/SATHYA/CHAINAIM3003/mcp-servers/CHAINAIM-TEAM/RESEARCH/CHAINAIM-TEAM-RESEARCH"
+  kb_dir: "../GENERAL-RESEARCH/output"
+  full_dir: "kb/full"               # extracted raw content (relative to kb_dir)
+  highlights_dir: "kb/highlights"   # synthesized entries (relative to kb_dir) — V2+ / manual V1
+  manifest: "manifest.json"         # dedupe ledger (relative to kb_dir)
+  formats: ["txt"]                  # extracted formats to write: any of txt, md, json
+
+youtube:
+  # MUST stay absolute — this is the external skill, outside the package.
+  transcript_script: "C:/SATHYA/CHAINAIM3003/mcp-servers/FINAGENTS/FINAGENTS1/agent-skills/skills/youtube-transcript/scripts/get_transcript.py"
+  timestamps: false                 # default; overridable per-run with --timestamps / --no-timestamps
+  throttle:
+    min_delay_s: 2.0                # minimum seconds between extractor calls
+    jitter_s: 1.0                   # random 0..jitter added to each delay
+    backoff_factor: 2.0             # multiplier applied on retry
+    max_retries: 3                  # attempts per source before giving up
+
+cost:
+  token_budget_per_run: 200000      # hard ceiling; orchestrator checkpoints + stops on breach
+  ledger: "cost_ledger.jsonl"       # relative to kb_dir; one JSON object appended per run
+
+synthesis:
+  levels: ["tldr", "highlights", "deep"]   # leveled output (deep => Opus; see cost-model)
+  judge_max_retries: 2              # evaluator-optimizer loop cap (V2+)
+
+model:
+  provider: "subscription"     # subscription = Claude MAX via claude -p ; api = ANTHROPIC_API_KEY
+  deployment: "internal"       # internal allows subscription; product forbids it (forces api)
+  route:
+    classify: "haiku"
+    synthesize: "sonnet"
+    deep: "opus"
+    judge: "sonnet"
+  api_key_env: "ANTHROPIC_API_KEY"
+  oauth_token_env: "CLAUDE_CODE_OAUTH_TOKEN"
