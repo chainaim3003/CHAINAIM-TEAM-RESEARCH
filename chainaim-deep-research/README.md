@@ -21,7 +21,8 @@ Edit `config.yaml` (the shared, language-independent public interface):
   `../GENERAL-RESEARCH/input`).
 - `output.kb_dir` -> where the KB, manifest, and ledger are written (current default:
   `../GENERAL-RESEARCH/output`).
-- `youtube.transcript_script` -> absolute path to the skill's `get_transcript.py`.
+- `youtube.transcript_script` -> path to the skill's `get_transcript.py`, relative to this
+  package dir (vendored in-repo default: `../agent-skills/skills/youtube-transcript/scripts/get_transcript.py`). An absolute path also works.
 - `youtube.throttle.*`, `cost.token_budget_per_run`, `output.formats` -> tune as needed.
 
 Relative paths are anchored to THIS package dir (the folder holding `config.yaml`), not your
@@ -32,7 +33,7 @@ path can also be overridden per-run on the CLI (config supplies defaults; the fl
 
 Run everything from the package folder:
 ```bash
-cd C:\SATHYA\CHAINAIM3003\mcp-servers\CHAINAIM-TEAM\RESEARCH\CHAINAIM-TEAM-RESEARCH\chainaim-deep-research
+cd chainaim-deep-research   # from the root of your cloned repo
 ```
 
 Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/changes**. Step 4 onward

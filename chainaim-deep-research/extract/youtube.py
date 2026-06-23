@@ -41,12 +41,18 @@ def write_full(
     text: str,
     full_dir: Path,
     formats: List[str],
+    kb_dir: Path,
 ) -> Dict[str, str]:
     """Write extracted transcript to kb/full/<key>.<fmt> for each requested format.
 
-    Returns a {fmt: path} map for the manifest. 'md' wraps the transcript in a
-    minimal markdown stub; 'json' stores {key, text}. The transcript text itself
-    is never modified (the skill's CRITICAL rule), only wrapped.
+    Returns a {fmt: path} map for the manifest. Each path is stored RELATIVE to kb_dir
+    (POSIX-style, e.g. "kb/full/<key>.txt") so the manifest is portable across machines
+    and OSes: it sits beside manifest.json (which lives at kb_dir) and resolves the same
+    way from any clone. If a target somehow lands outside kb_dir, its absolute POSIX path
+    is stored as a fallback rather than crashing.
+
+    'md' wraps the transcript in a minimal markdown stub; 'json' stores {key, text}. The
+    transcript text itself is never modified (the skill's CRITICAL rule), only wrapped.
     """
     full_dir.mkdir(parents=True, exist_ok=True)
     paths: Dict[str, str] = {}
@@ -60,7 +66,10 @@ def write_full(
             target.write_text(json.dumps({"key": key, "text": text}, ensure_ascii=False, indent=2), encoding="utf-8")
         else:
             raise ValueError(f"unknown format '{fmt}' (expected txt|md|json)")
-        paths[fmt] = str(target)
+        try:
+            paths[fmt] = target.relative_to(kb_dir).as_posix()
+        except ValueError:
+            paths[fmt] = target.as_posix()
     return paths
 
 
@@ -70,6 +79,7 @@ def extract(
     source: str,
     transcript_script: str,
     full_dir: Path,
+    kb_dir: Path,
     formats: List[str],
     throttle: Throttle,
     timestamps: bool = False,
@@ -77,7 +87,8 @@ def extract(
     """Extract one video. Returns (ok, paths, info).
 
     ok=False -> info is the skill's stderr / error text; paths is empty.
-    ok=True  -> paths is {fmt: file}, info is the content hash.
+    ok=True  -> paths is {fmt: file} (relative to kb_dir, see write_full), info is the
+    content hash.
     """
     cmd = build_cmd(transcript_script, source, timestamps=timestamps)
     ok, output = throttle.run_with_retry(cmd)
@@ -86,5 +97,5 @@ def extract(
     text = output.rstrip("\n")
     if not text.strip():
         return False, {}, "empty transcript (video may lack captions)"
-    paths = write_full(key=key, text=text, full_dir=full_dir, formats=formats)
+    paths = write_full(key=key, text=text, full_dir=full_dir, formats=formats, kb_dir=kb_dir)
     return True, paths, content_hash(text)

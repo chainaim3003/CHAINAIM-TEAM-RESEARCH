@@ -80,7 +80,7 @@ def _extract_one(td: Path, key: str, source: str) -> Tuple[bool, Manifest]:
     throttle = Throttle(min_delay_s=0.0, jitter_s=0.0, backoff_factor=1.0, max_retries=1)
     ok, paths, info = yt.extract(
         key=key, source=source, transcript_script=str(fake),
-        full_dir=td / "kb" / "full", formats=["txt", "json"], throttle=throttle, timestamps=False,
+        full_dir=td / "kb" / "full", kb_dir=td, formats=["txt", "json"], throttle=throttle, timestamps=False,
     )
     if ok:
         m.record(key, source, info, paths, status="extracted")
@@ -105,7 +105,7 @@ def suite_extract(fixtures: Path, verbose: bool) -> Result:
         ok2, _, info = yt.extract(
             key="FAILTHIS123", source="FAILTHIS123",
             transcript_script=str(PKG / "evals" / "fixtures" / "fake_transcript.py"),
-            full_dir=td / "kb" / "full", formats=["txt"],
+            full_dir=td / "kb" / "full", kb_dir=td, formats=["txt"],
             throttle=Throttle(min_delay_s=0.0, jitter_s=0.0, max_retries=1), timestamps=False,
         )
         if ok2:

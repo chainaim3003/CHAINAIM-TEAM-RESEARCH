@@ -1,0 +1,310 @@
+[music]
+>> When Fable showed up, a lot of people
+had the same reaction. This feels
+different. Not just better, different.
+It came across as something that could
+reason through complex work instead of
+just producing a clean response. That is
+why people got so obsessed with it.
+Fable gave people a glimpse of what AI
+starts to feel like [music] when it
+stops being just a model and starts
+feeling more like intelligence you can
+use for serious work. Then it got pulled
+away. But the interesting part was never
+just Fable itself. The interesting part
+was what it revealed. It showed that
+there is a level of reasoning people are
+hungry for, and more importantly, that
+once AI crosses that threshold, the next
+question is no longer just how smart is
+the model? The next question becomes,
+what kind of system do you build around
+that intelligence? And that is where
+things start getting really interesting
+because two new developments are
+pointing to something much bigger. One
+is Abacus AI with what they call apps in
+AI agents. The other is Fusion agents,
+which is basically a multi-agent system
+that gives you Fable-like depth by
+combining a planning model with a swarm
+of cheaper worker models. If you put
+those two things together, you start to
+see something that looks a lot closer to
+the first real shape of AGI. Not AGI as
+a sci-fi robot or one magical super
+model that wakes up one morning and
+solves everything, but more like AGI as
+a working system. A system that can
+reason, split up work, create tools on
+the fly, use infrastructure, interact
+with external services, and deliver
+finished outputs that people can
+actually use. That is the real shift
+here. Because for years, most AI
+progress has been talked about in the
+language of models.
+>> [music]
+>> Bigger model, better benchmark, more
+tokens, lower hallucination rate, faster
+inference, better reasoning. And all of
+that matters. But if you only look at
+the model, you are missing the bigger
+thing that is forming around it. What
+matters now is not just the brain, it is
+the body around the brain. Abacus is one
+of the clearest examples of this. Their
+whole idea with apps and AI agents is
+simple, but once you see it, it clicks
+immediately. Most AI systems still give
+you text as the final product. Maybe
+very good [music] text, maybe code,
+maybe a document, but still mostly text.
+Abacus is pushing towards something
+else. The AI does not just tell you
+about something, it generates an
+interactive application right inside the
+workflow. That sounds like a small
+difference until you look at the demos.
+In one example, the user asks the agent
+to explain [music] how data centers work
+and to use 3.js to create an interactive
+artifact. [music] The result is not a
+paragraph, it is not a diagram pasted
+into the chat. It is a fully interactive
+3D model of a data center embedded in
+the conversation. You can rotate it,
+[music] explore different layers, toggle
+between compute, storage, network,
+cooling, power, and airflow, and click
+on components to see details like server
+utilization,
+storage capacity, or power [music] draw.
+That matters because the AI is not just
+answering the question. It is creating
+the tool you need in order to understand
+the answer properly. That is a very
+different thing. Then there is another
+demo where the user asks the system to
+analyze the system design of services
+like Instagram, Gmail, YouTube, Uber,
+and Amazon and create diagrams using
+Lucidchart. The agent does web research,
+pulls architecture details, and
+generates professional diagrams for each
+service, not rough sketches.
+Actual structured diagrams with layers,
+services, databases, [music] caching
+systems, and infrastructure components
+laid out in a way that looks like real
+systems design work. And then the user
+can edit those diagrams directly.
+Again, that is the important part. The
+output is not frozen.
+>> [music]
+>> The AI creates something that becomes
+part of a working environment. Same
+thing with scientific research. One demo
+has the user asking the agent to
+research swarm intelligence in
+biological systems and how it connects
+to multi-agent algorithms. The system
+researches the topic and generates
+interactive Excalidraw diagrams covering
+ant colony optimization, particle swarm
+optimization, bee colony behavior,
+flocking rules, stigmergy, and the
+mapping between biological systems and
+computational methods. That is not just
+content generation. That is the creation
+of a structured visual thinking tool.
+Then there is the analytics demo. The AI
+connects to Amplitude and analyzes real
+user behavior data, then creates
+interactive charts that the user can
+change on the fly.
+You can switch chart types, inspect
+funnels, compare revenue across
+platforms, and look at retention trends.
+The AI is acting less like a text
+assistant and more like an analyst who
+also builds the dashboard while doing
+the analysis. That is a massive clue
+about where this is going. Because one
+of the biggest limitations of normal AI
+chat is that even when the answer is
+good, the format is often wrong for the
+task. If you are explaining a system,
+you want something explorable. If you
+are doing architecture, you want a
+diagram. If you are working with
+analytics, you want a chart you can
+manipulate. If you are teaching a
+concept, you want a visual model. Abacus
+is moving toward AI that can generate
+the right interface for the job instead
+of forcing every problem back into
+[music] text. And then you get to the
+part that makes the whole thing even
+more important, which is the
+supercomputer.
+This is the infrastructure layer behind
+it. Abacus shows a demo where the user
+tells the system to host an open-source
+language model, specifically Qwen 2.5
+with half a billion parameters, [music]
+and provide a website to chat with it.
+The agent then goes through the process
+of actually setting this up. It checks
+resources, extracts weights, creates the
+environment, installs dependencies,
+configures Nginx, deploys the service,
+tests it internally, [music] tests it
+externally, and then gives the user a
+working public URL. That is real
+infrastructure work. The AI sets up the
+environment, configures the server,
+deploys the service, tests it, and makes
+it publicly accessible. Then, on the
+other side, you have Fusion Agents,
+which tackles a different but equally
+important part of the puzzle. Fusion
+Agents is really about coordination. The
+core idea is that instead of trying to
+solve a big task with one model in one
+pass, you use a planning agent to break
+the task into parts, and then you send
+those parts to multiple worker agents
+running in parallel.
+Those workers can use cheaper models
+like DeepSeek Flash, Gemma, or Kimmy,
+while the top-level planner uses
+stronger closed models like Opus 4.8 or
+GPT 5.5 [music] for decomposition,
+oversight, and synthesis. This is
+important for two reasons.
+First, it is cheaper, much cheaper.
+Second, and maybe more importantly, it
+is closer to how complex work actually
+happens. A lot of serious tasks are not
+one straight line. They are bundles of
+subtasks. You audit this section, review
+that code path, analyze those resumes,
+compare those companies, extract themes
+from those reviews, [music] then merge
+everything into a final output. Fusion
+Agents turns that into a native AI
+workflow. The bug-fixing demo is a good
+example. The system is pointed at the
+freeCodeCamp repository and told to
+inspect the code base, identify multiple
+front-end areas, assign them to worker
+agents, and look for accessibility
+issues.
+The planning agent maps the repo, splits
+it into several UI areas, and sends each
+one to a separate worker. Each worker
+audits its own zone for problems like
+missing aria attributes, broken
+accessibility patterns, empty alt text,
+or weak [music] interaction design. Then
+the planner merges everything, removes
+overlap, applies conservative fixes, and
+[music] produces code diffs, a
+structured audit, explanations for each
+change, and notes about what it chose
+not to touch. The pull request review
+demo pushes the same idea further.
+>> [music]
+>> The user asks the system to review the
+last 10 PRs, look for bugs, edge cases,
+[music]
+weak tests, security issues, and
+maintainability risks, and then modify
+the code and create follow-up PRs.
+The planning agent pulls the PRs,
+assigns one to each worker, and the
+workers perform contextual reviews in
+parallel. Then the system posts review
+comments, generates new PRs, and gets
+the fixes through CI. Again, the
+important thing is that the output is
+not, here are some thoughts. The output
+is action. The resume screening demo
+shows how this goes beyond software. A
+recruiter asks the system to rank 50
+resumes for a QA engineer role. [music]
+The agent asks clarifying questions,
+then splits the resumes into batches,
+[music]
+and sends them to multiple workers. Each
+worker scores candidates against the
+role and returns structured results. The
+final output is a ranked CSV with masked
+candidate IDs, links to resumes, scoring
+breakdowns, [music] and recommendations.
+That is exactly the kind of thing that
+takes humans a full day of focused work
+and a lot of tedious consistency that
+people are frankly not great at
+maintaining over 50 nearly repetitive
+documents.
+Then there is the equity research demo,
+where the agent analyzes the top 50 S&P
+500 stocks by market [music] cap and
+builds a 10-stock portfolio for a
+$10,000 investment. It asks for
+preferences, splits the universe across
+worker agents, has them analyze
+different companies in parallel, and
+then synthesizes a final portfolio along
+with a full research report. And the
+Play Store review demo might be the
+clearest example of why multi-agent
+systems matter. Reading 100 app reviews
+is not hard. Extracting the right
+patterns from them is the hard part.
+Fusion handles that by assigning
+different lenses to different workers.
+[music]
+One looks for themes, one pulls
+representative quotes, one translates
+the themes into strategic
+recommendations. Then the planner
+combines those into a product [music]
+intelligence report. That is basically
+an AI organization inside one workflow.
+And this is where the AGI angle actually
+shows. Fable showed how powerful deep
+reasoning [music] can feel. But
+reasoning alone only gets you so far.
+The next step [music] is turning that
+reasoning into a system that can plan
+the work, divide it between agents, use
+tools, connect to real platforms, deploy
+[music] things, and deliver something
+usable at the end. That is what Fusion
+and Abacus are pointing toward from two
+different sides.
+Fusion shows how one difficult task can
+be broken into parallel work and fused
+[music] back into one clean result.
+Abacus shows how the output can become
+an actual app, diagram, dashboard,
+research tool, or deployed service
+instead of just another text response. A
+year ago, most of this still felt
+experimental. Now we are seeing agents
+build interactive learning tools, create
+architecture diagrams, analyze real
+product data, deploy live models, and
+mine user feedback.
+That is the shift. AI is moving from
+impressive answers to valuable work. And
+the real competition now is who can
+build the best system around the
+intelligence. That's it for this one.
+Subscribe for more AI updates. Thanks
+for watching and I'll see you in the
+next video.

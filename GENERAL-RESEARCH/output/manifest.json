@@ -3,7 +3,7 @@
     "source_url": "| 96 | 6/22/26 | 10:15 AM | https://www.youtube.com/watch?v=wEpw20UIfzI | co-work |",
     "content_hash": "sha256-3bc92fceeb21e49a",
     "full_paths": {
-      "txt": "C:\\SATHYA\\CHAINAIM3003\\mcp-servers\\CHAINAIM-TEAM\\RESEARCH\\CHAINAIM-TEAM-RESEARCH\\GENERAL-RESEARCH\\output\\kb\\full\\wEpw20UIfzI.txt"
+      "txt": "kb/full/wEpw20UIfzI.txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:53:25.332035+00:00"
@@ -12,7 +12,7 @@
     "source_url": "| 97 | 6/22/26 | 10:15 AM | https://www.youtube.com/watch?v=sJPux4buZN0 | co-work email 2 |",
     "content_hash": "sha256-cc33fa81a4466e1c",
     "full_paths": {
-      "txt": "C:\\SATHYA\\CHAINAIM3003\\mcp-servers\\CHAINAIM-TEAM\\RESEARCH\\CHAINAIM-TEAM-RESEARCH\\GENERAL-RESEARCH\\output\\kb\\full\\sJPux4buZN0.txt"
+      "txt": "kb/full/sJPux4buZN0.txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:58:14.912458+00:00"
@@ -21,7 +21,7 @@
     "source_url": "| 98 | 6/22/26 | 10:18 AM | https://www.youtube.com/watch?v=YtRIj_KU9d4 | VERY IMPORTANT — Agentic Arch & Designer |",
     "content_hash": "sha256-78795892a16189c7",
     "full_paths": {
-      "txt": "C:\\SATHYA\\CHAINAIM3003\\mcp-servers\\CHAINAIM-TEAM\\RESEARCH\\CHAINAIM-TEAM-RESEARCH\\GENERAL-RESEARCH\\output\\kb\\full\\YtRIj_KU9d4.txt"
+      "txt": "kb/full/YtRIj_KU9d4.txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:58:19.894165+00:00"
@@ -30,7 +30,7 @@
     "source_url": "| 99 | 6/22/26 | 10:21 AM | https://www.youtube.com/watch?v=n35KalqEwJc | git worktree |",
     "content_hash": "sha256-9b904080810b1677",
     "full_paths": {
-      "txt": "C:\\SATHYA\\CHAINAIM3003\\mcp-servers\\CHAINAIM-TEAM\\RESEARCH\\CHAINAIM-TEAM-RESEARCH\\GENERAL-RESEARCH\\output\\kb\\full\\n35KalqEwJc.txt"
+      "txt": "kb/full/n35KalqEwJc.txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:58:24.151647+00:00"
@@ -39,7 +39,7 @@
     "source_url": "https://www.youtube.com/watch?v=DhX4L5bpenU -    DRIFT  control . HANDOFF .",
     "content_hash": "sha256-9174064a155e491d",
     "full_paths": {
-      "txt": "C:\\SATHYA\\CHAINAIM3003\\mcp-servers\\CHAINAIM-TEAM\\RESEARCH\\CHAINAIM-TEAM-RESEARCH\\GENERAL-RESEARCH\\output\\kb\\full\\DhX4L5bpenU.txt"
+      "txt": "kb/full/DhX4L5bpenU.txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T10:00:29.763320+00:00"
@@ -48,9 +48,45 @@
     "source_url": "https://www.youtube.com/watch?v=RegzpFdW8pM -  OPENSOURCE for paid versions.",
     "content_hash": "sha256-f612e2d0f3b0cd1a",
     "full_paths": {
-      "txt": "C:\\SATHYA\\CHAINAIM3003\\mcp-servers\\CHAINAIM-TEAM\\RESEARCH\\CHAINAIM-TEAM-RESEARCH\\GENERAL-RESEARCH\\output\\kb\\full\\RegzpFdW8pM.txt"
+      "txt": "kb/full/RegzpFdW8pM.txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T10:00:35.100552+00:00"
+  },
+  "mYSRn6PC1mc": {
+    "source_url": "https://www.youtube.com/watch?v=mYSRn6PC1mc",
+    "content_hash": "sha256-f9f2a7462602d202",
+    "full_paths": {
+      "txt": "kb/full/mYSRn6PC1mc.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-06-23T11:09:48.326900+00:00"
+  },
+  "bSDkbx5rrpM": {
+    "source_url": "https://www.youtube.com/watch?v=bSDkbx5rrpM",
+    "content_hash": "sha256-7bd68d14e04419f6",
+    "full_paths": {
+      "txt": "kb/full/bSDkbx5rrpM.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-06-23T11:12:26.477907+00:00"
+  },
+  "tf6VNGH3tRk": {
+    "source_url": "https://www.youtube.com/watch?v=tf6VNGH3tRk",
+    "content_hash": "sha256-8977fb806fc88cbe",
+    "full_paths": {
+      "txt": "kb/full/tf6VNGH3tRk.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-06-23T11:12:41.351172+00:00"
+  },
+  "Z47vatpsGPI": {
+    "source_url": "https://www.youtube.com/watch?v=Z47vatpsGPI",
+    "content_hash": "sha256-2a822998c5eb32ab",
+    "full_paths": {
+      "txt": "kb/full/Z47vatpsGPI.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-06-23T11:15:56.197890+00:00"
   }
 }

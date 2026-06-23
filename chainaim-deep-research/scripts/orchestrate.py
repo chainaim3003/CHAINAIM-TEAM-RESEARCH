@@ -188,6 +188,7 @@ def run(args: argparse.Namespace) -> int:
             source=p["url"],
             transcript_script=transcript_script,
             full_dir=paths["full_dir"],
+            kb_dir=paths["kb_dir"],
             formats=formats,
             throttle=throttle,
             timestamps=timestamps,
