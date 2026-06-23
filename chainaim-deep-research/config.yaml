@@ -29,8 +29,9 @@ output:
   formats: ["txt"]                  # extracted formats to write: any of txt, md, json
 
 youtube:
-  # MUST stay absolute — this is the external skill, outside the package.
-  transcript_script: "C:/SATHYA/CHAINAIM3003/mcp-servers/FINAGENTS/FINAGENTS1/agent-skills/skills/youtube-transcript/scripts/get_transcript.py"
+  # In-repo skill, vendored under <repo>/agent-skills. RELATIVE to THIS package dir
+  # (anchored by orchestrate._anchor, NOT the shell cwd) -> portable across machines/clones.
+  transcript_script: "../agent-skills/skills/youtube-transcript/scripts/get_transcript.py"
   timestamps: false                 # default; overridable per-run with --timestamps / --no-timestamps
   throttle:
     min_delay_s: 2.0                # minimum seconds between extractor calls

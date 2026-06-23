@@ -127,7 +127,12 @@ def run(args: argparse.Namespace) -> int:
             return 2
 
     yt_cfg = cfg.get("youtube", {})
-    transcript_script = yt_cfg.get("transcript_script", "")
+    # transcript_script gets the SAME package-dir anchoring as every other config path
+    # (see _anchor): a RELATIVE value resolves against ROOT (the package dir), not the shell
+    # cwd, so the vendored in-repo skill works no matter where `uv run` is invoked. An
+    # ABSOLUTE value passes through unchanged. Empty/unset stays "" so the failure is explicit.
+    _ts_raw = yt_cfg.get("transcript_script", "")
+    transcript_script = str(_anchor(_ts_raw, ROOT)) if _ts_raw else ""
     if args.timestamps is not None:
         timestamps = args.timestamps
     else:

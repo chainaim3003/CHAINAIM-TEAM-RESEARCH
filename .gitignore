@@ -1,8 +1,3 @@
-# Nested git repo — agent-skills is its OWN repository (.git inside it).
-# Ignore it here so `git add .` doesn't embed it as a gitlink. (It stays a
-# separate repo on disk; manage/commit it from inside agent-skills/ itself.)
-agent-skills/
-
 # Python / uv
 .venv/
 __pycache__/
