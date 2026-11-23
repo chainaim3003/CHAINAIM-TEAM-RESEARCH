@@ -28,12 +28,29 @@ output:
   manifest: "manifest.json"         # dedupe ledger (relative to kb_dir)
   prompts_dir: "kb/prompts"         # ready-to-paste AI prompts, one per transcript (build_kb_pack.py)
   prompt_template: "synth/manual_prompt.md"   # template for those prompts (relative to this package dir)
+  prompt_template_repo: "synth/manual_prompt_repo.md"   # template used for GitHub repo entries (PR-5)
   formats: ["txt"]                  # extracted formats to write: any of txt, md, json
   # PR-2 file naming. "title_id" -> "<Title> [<id>].txt" (title from YouTube oEmbed, free, no key;
   # falls back to "<id>" with a warning if the lookup fails). "id" -> "<id>.txt" (no lookup).
   # Override per run with --naming.
   naming: "title_id"
   max_stem_len: 100                 # max file-name length without extension (keeps Windows paths < 260)
+
+github:
+  # PR-5: GitHub repo/account links -> kb/full/<owner>__<repo> [github].md (no AI, GitHub REST API).
+  # Token is optional (public repos work without it: 60 requests/hour). Put GITHUB_TOKEN in the
+  # repo-root .env (git-ignored) for 5,000 requests/hour and private repos you can read.
+  token_env: "GITHUB_TOKEN"
+  max_repos: 20                     # per account link (most recently pushed first)
+  include_forks: false
+  include_archived: false
+  max_tree_entries: 400             # paths shown in the folder listing
+  max_files: 15                     # key files included (package.json, pyproject.toml, docs/*.md, ...)
+  max_file_bytes: 50000             # per key file
+  max_total_bytes: 300000           # README + key files together
+  min_delay_s: 0.5                  # pause between GitHub API calls
+  min_remaining: 5                  # stop before the rate limit is fully used
+  timeout_s: 20
 
 youtube:
   # In-repo skill, vendored under <repo>/agent-skills. RELATIVE to THIS package dir

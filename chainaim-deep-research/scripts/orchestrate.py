@@ -30,6 +30,7 @@ CLI flags (Rule 8 — all behavior configurable, defaults sensible):
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
@@ -51,6 +52,8 @@ from ingest.local_dir import collect_sources      # noqa: E402
 from extract import youtube as yt                 # noqa: E402
 from extract.metadata import fetch_youtube_title  # noqa: E402
 from naming import DEFAULT_MAX_LEN, safe_stem     # noqa: E402
+from envfile import load_env_file                 # noqa: E402
+from extract import github as gh                  # noqa: E402
 
 
 # ----- Router / classify (contract s4: classify(line) -> (kind, key)) -----
@@ -62,16 +65,35 @@ _YT_PATTERNS = [
 ]
 
 
+# GitHub (PR-5). "github.com/<owner>/<repo>[/anything]" -> repo; "github.com/<owner>" -> account.
+# The look-behind skips gist.github.com and other subdomains. Manifest keys "gh:<owner>[/<repo>]"
+# classify too, so tools that re-derive URLs from keys (migrate_manifest.py) keep working.
+_GH_URL = re.compile(r"(?<![\w.])(?:www\.)?github\.com/([A-Za-z0-9-]+)(?:/([A-Za-z0-9._-]+))?", re.I)
+_GH_KEY = re.compile(r"^gh:([A-Za-z0-9-]+)(?:/([A-Za-z0-9._-]+))?$")
+_GH_RESERVED = {"orgs", "settings", "topics", "marketplace", "features", "about", "pricing", "login",
+                "explore", "sponsors", "collections", "notifications", "issues", "pulls", "search",
+                "apps", "enterprise", "trending", "site", "security", "customer-stories"}
+
+
 def classify(line: str) -> Tuple[str, Optional[str]]:
     """Classify a raw source line. Returns (kind, key).
 
-    V1 recognizes YouTube only. Anything else -> ("unknown", None), skipped with a note.
+    Kinds: "youtube" (key = 11-char video id), "github_repo" (key = "gh:<owner>/<repo>"),
+    "github_account" (key = "gh:<owner>"). Anything else -> ("unknown", None), skipped with a note.
     """
     s = line.strip()
     for pat in _YT_PATTERNS:
         m = pat.search(s)
         if m:
             return "youtube", m.group(1)
+    m = _GH_KEY.match(s) or _GH_URL.search(s)
+    if m and m.group(1).lower() not in _GH_RESERVED:
+        owner, repo = m.group(1), m.group(2)
+        if repo:
+            repo = repo[:-4] if repo.lower().endswith(".git") else repo
+            if repo:
+                return "github_repo", f"gh:{owner}/{repo}"
+        return "github_account", f"gh:{owner}"
     return "unknown", None
 
 
@@ -86,6 +108,8 @@ def canonical_url(kind: str, key: str) -> str:
     """
     if kind == "youtube":
         return f"https://www.youtube.com/watch?v={key}"
+    if kind in ("github_repo", "github_account"):
+        return f"https://github.com/{key[3:]}"
     raise ValueError(f"no canonical URL rule for kind '{kind}'")
 
 
@@ -175,6 +199,11 @@ def run(args: argparse.Namespace) -> int:
     ledger = CostLedger(paths["ledger"], token_budget_per_run=int(cfg.get("cost", {}).get("token_budget_per_run", 0)))
     throttle = build_throttle(cfg)
 
+    # Secrets (e.g. GITHUB_TOKEN) come from the environment or the git-ignored repo-root .env.
+    # Existing environment variables always win; values are never printed.
+    load_env_file(ROOT.parent / ".env")
+    gh_cfg = cfg.get("github", {})
+
     planned: List[Dict] = []
     skipped_unknown: List[str] = []
     skipped_dedupe = 0
@@ -183,36 +212,63 @@ def run(args: argparse.Namespace) -> int:
 
     for item in items:
         kind, key = classify(item["url"])
-        if kind != "youtube" or not key:
+        if kind not in ("youtube", "github_repo", "github_account") or not key:
             skipped_unknown.append(item["url"])
             continue
-        if manifest.seen(key) and not args.force:
-            skipped_dedupe += 1
-            continue
-        # url  = canonical link (stored as manifest source_url and passed to the extractor;
-        #        the transcript skill accepts watch?v= URLs)
+        refresh = False
+        if kind != "github_account" and manifest.seen(key) and not args.force:
+            if kind == "github_repo" and args.refresh_github:
+                refresh = True  # re-check: re-extract only if the repo's commit changed
+            else:
+                skipped_dedupe += 1
+                continue
+        # url  = canonical link (stored as manifest source_url and passed to the extractor)
         # line = the original input line, kept verbatim as manifest source_line (audit trail)
-        planned.append({"key": key, "url": canonical_url(kind, key), "line": item["url"]})
+        planned.append({"kind": kind, "key": key, "url": canonical_url(kind, key),
+                        "line": item["url"], "refresh": refresh})
         if args.max_videos is not None and len(planned) >= args.max_videos:
             break
 
-    print(f"== ChainAIM V1 ==  ingest={len(items)}  youtube_new={len(planned)}  "
+    n_yt = sum(1 for p in planned if p["kind"] == "youtube")
+    n_gh = len(planned) - n_yt
+    print(f"== ChainAIM ==  ingest={len(items)}  youtube_new={n_yt}  github_new={n_gh}  "
           f"dedupe_skipped={skipped_dedupe}  unknown_skipped={len(skipped_unknown)}  naming={naming}")
     if skipped_unknown:
-        print("  unknown (not YouTube; V1 skips — future versions route these):")
+        print("  unknown (not YouTube or GitHub; skipped):")
         for u in skipped_unknown[:10]:
             print(f"    - {u}")
 
     if args.dry_run:
         print("\n-- DRY RUN: would extract --")
         for p in planned:
-            print(f"    {p['key']}  <-  {p['line']}")
+            note = " (repos listed at extract time)" if p["kind"] == "github_account" else (
+                " (refresh: re-extract only if changed)" if p["refresh"] else "")
+            print(f"    {p['key']}  <-  {p['line']}{note}")
         if naming == "title_id":
             print("(titles are looked up at extract time, not in a dry run)")
         print("(no files written, no manifest/ledger changes)")
         return 0
 
+    gh_client: Optional[gh.GitHubClient] = None
+    gh_stopped = False
     for p in planned:
+        if p["kind"] != "youtube":
+            if gh_stopped:
+                failed.append((p["key"], "skipped: GitHub rate limit reached earlier in this run"))
+                continue
+            if gh_client is None:
+                gh_client = gh.GitHubClient(
+                    token=os.environ.get(gh_cfg.get("token_env", "GITHUB_TOKEN")) or None,
+                    timeout_s=float(gh_cfg.get("timeout_s", 20)),
+                    min_delay_s=float(gh_cfg.get("min_delay_s", 0.5)),
+                    min_remaining=int(gh_cfg.get("min_remaining", 5)),
+                )
+            ok_n, gh_failed, gh_stopped = _run_github_item(p, gh_client, gh_cfg, manifest, paths,
+                                                           max_stem_len, args)
+            extracted += ok_n
+            ledger.add(items_processed=ok_n)
+            failed.extend(gh_failed)
+            continue
         # Title lookup (PR-2). Failure never invents a title: fall back to the key-only name.
         title: Optional[str] = None
         if naming == "title_id":
@@ -247,6 +303,8 @@ def run(args: argparse.Namespace) -> int:
             failed.append((p["key"], info))
             print(f"  [FAIL] {p['key']}: {info}")
 
+    if gh_client is not None:
+        ledger.add(free_tool_calls=gh_client.calls)
     ledger.add(items_skipped_dedupe=skipped_dedupe)
     # cumulative() must run BEFORE flush(): flush writes this run to disk, and cumulative
     # reads disk + in-memory — calling it after flush would double-count the current run.
@@ -260,8 +318,81 @@ def run(args: argparse.Namespace) -> int:
           f"llm_tokens={cum['llm_tokens']}")
     if failed:
         print("  NOTE: failures above are usually missing captions or throttling — safe to re-run (dedupe protects successes).")
-    print("\n  next: synthesis is MANUAL in V1 — open a Claude Code session on Max and follow synth/synthesize.md")
+    print("\n  next: run scripts/build_kb_pack.py, then paste a kb/prompts/*.prompt.md file into any AI "
+          "and save its answer in kb/highlights/ (the agent itself uses no AI)")
     return 0 if not failed else 1
+
+
+def _run_github_item(p: Dict, client: "gh.GitHubClient", gh_cfg: dict, manifest: Manifest,
+                     paths: Dict[str, Path], max_stem_len: int, args: argparse.Namespace):
+    """Extract one planned GitHub repo or account. Returns (extracted_count, failures, rate_limited).
+
+    An account expands into its repos (most recently pushed first, forks/archived excluded unless
+    configured); each repo becomes its own manifest entry and file, deduped like everything else.
+    """
+    failures: List[Tuple[str, str]] = []
+    try:
+        if p["kind"] == "github_account":
+            owner = p["key"][3:]
+            names = gh.list_account_repos(
+                client, owner, max_repos=int(gh_cfg.get("max_repos", 20)),
+                include_forks=bool(gh_cfg.get("include_forks", False)),
+                include_archived=bool(gh_cfg.get("include_archived", False)))
+            print(f"  [github] account {owner}: {len(names)} repo(s)")
+            todo = []
+            for full in names:
+                k = f"gh:{full}"
+                if manifest.seen(k) and not args.force and not args.refresh_github:
+                    print(f"    - {k}: already extracted (dedupe)")
+                    continue
+                todo.append({"kind": "github_repo", "key": k, "url": canonical_url("github_repo", k),
+                             "line": p["line"], "refresh": manifest.seen(k)})
+        else:
+            todo = [p]
+    except gh.GitHubRateLimit as exc:
+        print(f"  [FAIL] {p['key']}: {exc}")
+        return 0, [(p["key"], str(exc))], True
+    except gh.GitHubError as exc:
+        print(f"  [FAIL] {p['key']}: {exc}")
+        return 0, [(p["key"], str(exc))], False
+
+    done = 0
+    for item in todo:
+        full = item["key"][3:]
+        try:
+            md, meta = gh.extract_repo(
+                client, full,
+                max_tree_entries=int(gh_cfg.get("max_tree_entries", 400)),
+                max_files=int(gh_cfg.get("max_files", 15)),
+                max_file_bytes=int(gh_cfg.get("max_file_bytes", 50_000)),
+                max_total_bytes=int(gh_cfg.get("max_total_bytes", 300_000)),
+                key_files=gh_cfg.get("key_files") or None)
+        except gh.GitHubRateLimit as exc:
+            print(f"  [FAIL] {item['key']}: {exc}")
+            failures.append((item["key"], str(exc)))
+            return done, failures, True
+        except gh.GitHubError as exc:
+            print(f"  [FAIL] {item['key']}: {exc}")
+            failures.append((item["key"], str(exc)))
+            continue
+        hash_value = f"git-{meta['sha'][:16]}"
+        prev = manifest.get(item["key"]) or {}
+        if item.get("refresh") and prev.get("content_hash") == hash_value:
+            print(f"  [unchanged] {item['key']} (commit {meta['sha'][:12]})")
+            continue
+        stem = safe_stem(full.replace("/", "__"), "github", max_len=max_stem_len)
+        paths["full_dir"].mkdir(parents=True, exist_ok=True)
+        target = paths["full_dir"] / f"{stem}.md"
+        target.write_text(md, encoding="utf-8")
+        try:
+            rel = target.relative_to(paths["kb_dir"]).as_posix()
+        except ValueError:
+            rel = target.as_posix()
+        manifest.record(item["key"], item["url"], hash_value, {"md": rel}, status="extracted",
+                        source_line=item["line"], title=meta["title"], stem=stem, kind="github_repo")
+        done += 1
+        print(f"  [ok] {item['key']} -> {rel}")
+    return done, failures, False
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -270,6 +401,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="plan only; no extraction or writes")
     p.add_argument("--max-videos", type=int, default=None, help="cap sources processed this run")
     p.add_argument("--force", action="store_true", help="ignore dedupe gate; re-extract seen keys")
+    p.add_argument("--refresh-github", action="store_true",
+                   help="re-check already-extracted GitHub repos; re-extract only those whose commit changed")
     p.add_argument("--provider-check", action="store_true", help="print provider guardrail report and exit")
     p.add_argument("--kb-dir", default=None, help="override output.kb_dir")
     p.add_argument("--naming", choices=["title_id", "id"], default=None,

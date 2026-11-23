@@ -10,7 +10,7 @@ separate suites keyed off model.provider; they are intentionally NOT run in V1.
 Flags (Rule 8):
     --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
     --verbose        print each case, not just the summary
-    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|pack)
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|pack|github)
 
 Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
 """
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -40,6 +41,8 @@ from extract import youtube as yt            # noqa: E402
 from extract.metadata import HttpStatusError, fetch_youtube_title, oembed_url  # noqa: E402
 from naming import safe_stem                 # noqa: E402
 from build_kb_pack import build_pack          # noqa: E402
+from envfile import load_env_file             # noqa: E402
+from extract import github as ghx             # noqa: E402
 from rename_kb import apply_renames, apply_undo, plan_renames, plan_undo  # noqa: E402
 
 Result = Tuple[int, int, List[str]]  # (passed, total, failures)
@@ -567,6 +570,163 @@ def suite_pack(fixtures: Path, verbose: bool) -> Result:
     return passed, 4, fails
 
 
+def suite_github(fixtures: Path, verbose: bool) -> Result:
+    """PR-5: GitHub repo/account -> text, with a labelled OFFLINE fake GitHub API (no network).
+
+    6 checks:
+      1. extract_repo renders facts, folder tree, README and key files; states every cut
+         (tree cap, oversized file, total-bytes cap).
+      2. errors: missing repo -> GitHubError(404); low rate limit -> GitHubRateLimit raised
+         BEFORE the next request is sent.
+      3. account listing: forks/archived excluded by default, pagination, max_repos cap.
+      4. token goes only in the Authorization header (never in the URL); none sent without it.
+      5. build_kb_pack uses the repo template for kind "github_repo".
+      6. .env loader: sets missing vars, never overrides existing ones, skips empty values.
+    """
+    fails: List[str] = []
+    passed = 0
+
+    def check(n: int, msgs: List[str]) -> None:
+        nonlocal passed
+        if msgs:
+            fails.extend(f"github {n}: {m}" for m in msgs)
+        else:
+            passed += 1
+
+    seen_requests: List[Tuple[str, Dict[str, str]]] = []
+    tree = [{"path": "README.md", "type": "blob", "size": 50},
+            {"path": "src", "type": "tree"},
+            {"path": "src/app.py", "type": "blob", "size": 10},
+            {"path": "pyproject.toml", "type": "blob", "size": 30},
+            {"path": "package.json", "type": "blob", "size": 999999},
+            {"path": "docs/guide.md", "type": "blob", "size": 40}]
+
+    def fake_get(url, headers, timeout):  # TEST DOUBLE of api.github.com
+        seen_requests.append((url, headers))
+        h = {"x-ratelimit-remaining": "4999"}
+        path = url.replace(ghx.API, "")
+        if path == "/repos/o/r":
+            return 200, h, json.dumps({"default_branch": "main", "html_url": "https://github.com/o/r",
+                                       "description": "Demo repo", "language": "Python",
+                                       "stargazers_count": 7, "topics": ["agents"],
+                                       "license": {"spdx_id": "MIT"}}).encode()
+        if path.startswith("/repos/o/r/git/trees/main"):
+            return 200, h, json.dumps({"sha": "abc123def4567890", "tree": tree, "truncated": False}).encode()
+        if path == "/repos/o/r/readme":
+            return 200, h, b"# Demo\nRun: uv run app"
+        if path.startswith("/repos/o/r/contents/pyproject.toml"):
+            return 200, h, b"[project]\nname='demo'"
+        if path.startswith("/repos/o/r/contents/docs/guide.md"):
+            return 200, h, b"Guide\n```bash\nuv run x\n```\n## Inner heading"
+        if path.startswith("/users/acct/repos"):
+            page = int(path.split("&page=")[1])
+            if page == 1:
+                data = [{"full_name": f"acct/r{i}", "fork": i % 10 == 0, "archived": i % 15 == 0} for i in range(100)]
+            else:
+                data = [{"full_name": "acct/last", "fork": False, "archived": False}]
+            return 200, h, json.dumps(data).encode()
+        return 404, h, b'{"message":"Not Found"}'
+
+    noop = lambda _s: None  # noqa: E731
+    client = ghx.GitHubClient(token=None, http_get=fake_get, sleep=noop, min_delay_s=0)
+
+    # 1
+    c1 = []
+    md, meta = ghx.extract_repo(client, "o/r", max_tree_entries=3, max_files=5, max_file_bytes=1000,
+                                max_total_bytes=10_000)
+    for needle in ("# o/r", "Demo repo", "License: MIT", "Topics: agents", "Commit: abc123def456",
+                   "## Folder structure (6 entries)", "3 more entries not shown", "# Demo",
+                   "### pyproject.toml", "[project]", "### docs/guide.md",
+                   "package.json skipped (999,999 bytes"):
+        if needle not in md:
+            c1.append(f"missing {needle!r}")
+    if meta.get("sha") != "abc123def4567890":
+        c1.append(f"meta={meta}")
+    if "````md\nGuide" not in md:
+        c1.append("nested ``` in a key file not protected by a longer fence")
+    md2, _ = ghx.extract_repo(client, "o/r", max_total_bytes=30)
+    if "max_total_bytes 30 reached" not in md2:
+        c1.append("total-bytes cut not stated")
+    check(1, c1)
+
+    # 2
+    c2 = []
+    try:
+        ghx.extract_repo(client, "o/missing")
+        c2.append("missing repo did not raise")
+    except ghx.GitHubError as exc:
+        if exc.status != 404:
+            c2.append(f"status={exc.status}")
+    low = ghx.GitHubClient(http_get=fake_get, sleep=noop, min_delay_s=0, min_remaining=5)
+    low.remaining = 3
+    before = len(seen_requests)
+    try:
+        low.get("/repos/o/r")
+        c2.append("low rate limit did not raise")
+    except ghx.GitHubRateLimit:
+        if len(seen_requests) != before:
+            c2.append("request was sent despite low rate limit")
+    check(2, c2)
+
+    # 3
+    names = ghx.list_account_repos(client, "acct", max_repos=200)
+    c3 = []
+    if any(n in names for n in ("acct/r0", "acct/r10", "acct/r15")):
+        c3.append("fork/archived not excluded")
+    if names[-1] != "acct/last":
+        c3.append("second page not fetched")
+    if len(ghx.list_account_repos(client, "acct", max_repos=5)) != 5:
+        c3.append("max_repos cap not applied")
+    check(3, c3)
+
+    # 4
+    c4 = []
+    if any("Authorization" in h for _u, h in seen_requests):
+        c4.append("Authorization header sent without a token")
+    tok = ghx.GitHubClient(token="test-token-not-real", http_get=fake_get, sleep=noop, min_delay_s=0)
+    tok.get("/repos/o/r")
+    url, hdr = seen_requests[-1]
+    if hdr.get("Authorization") != "Bearer test-token-not-real" or "test-token" in url:
+        c4.append("token not in header only")
+    check(4, c4)
+
+    # 5
+    c5 = []
+    with tempfile.TemporaryDirectory() as tds:
+        kb = Path(tds)
+        (kb / "kb" / "full").mkdir(parents=True)
+        (kb / "kb" / "full" / "o__r [github].md").write_text(md, encoding="utf-8")
+        data = {"gh:o/r": {"source_url": "https://github.com/o/r", "status": "extracted", "kind": "github_repo",
+                           "title": "o/r", "stem": "o__r [github]", "full_paths": {"md": "kb/full/o__r [github].md"}}}
+        res = build_pack(data, kb_dir=kb, template="VIDEO {{TRANSCRIPT}}",
+                         repo_template=(PKG / "synth" / "manual_prompt_repo.md").read_text(encoding="utf-8"))
+        pr = (kb / "kb" / "prompts" / "o__r [github].prompt.md").read_text(encoding="utf-8")
+        if "Summarise this GitHub repository" not in pr or "VIDEO" in pr or "### pyproject.toml" not in pr:
+            c5.append("repo template not used or extract missing")
+        if res["written"] != ["gh:o/r"]:
+            c5.append(f"written={res['written']}")
+    check(5, c5)
+
+    # 6
+    c6 = []
+    with tempfile.TemporaryDirectory() as tds:
+        envp = Path(tds) / ".env"
+        envp.write_text("# c\nCDR_T1='abc'\nCDR_T2=\nCDR_T3=new\n", encoding="utf-8")
+        os.environ["CDR_T3"] = "old"
+        try:
+            names_set = load_env_file(envp)
+            if os.environ.get("CDR_T1") != "abc" or "CDR_T2" in os.environ or os.environ.get("CDR_T3") != "old":
+                c6.append(f"env state wrong, set={names_set}")
+        finally:
+            for k in ("CDR_T1", "CDR_T2", "CDR_T3"):
+                os.environ.pop(k, None)
+    check(6, c6)
+
+    if verbose:
+        print(f"  github -> {passed}/6 checks ok")
+    return passed, 6, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
@@ -576,6 +736,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "naming": suite_naming,
     "rename": suite_rename,
     "pack": suite_pack,
+    "github": suite_github,
 }
 
 

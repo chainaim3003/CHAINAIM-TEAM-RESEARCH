@@ -87,6 +87,7 @@ def build_pack(
     *,
     kb_dir: Path,
     template: str,
+    repo_template: Optional[str] = None,
     prompts_rel: str = "kb/prompts",
     highlights_rel: str = "kb/highlights",
     only_key: Optional[str] = None,
@@ -94,7 +95,10 @@ def build_pack(
     dry_run: bool = False,
     write_index: bool = True,
 ) -> Dict[str, List[Any]]:
-    """Write prompt files (+ INDEX.md). Returns {"written","unchanged","missing","rows"}."""
+    """Write prompt files (+ INDEX.md). Returns {"written","unchanged","missing","rows"}.
+
+    GitHub entries (manifest kind "github_repo", PR-5) use `repo_template` when given.
+    """
     written: List[str] = []
     unchanged: List[str] = []
     missing: List[str] = []
@@ -118,12 +122,13 @@ def build_pack(
         if only_key and key != only_key:
             continue
         transcript = (kb_dir / rel_full).read_text(encoding="utf-8")
+        tpl = repo_template if (repo_template and entry.get("kind") == "github_repo") else template
         if not force and _existing_hash(prompt_path) == content_hash(transcript):
             unchanged.append(key)
             continue
         if not dry_run:
             prompts_dir.mkdir(parents=True, exist_ok=True)
-            prompt_path.write_text(render_prompt(template, title=title, source_url=url,
+            prompt_path.write_text(render_prompt(tpl, title=title, source_url=url,
                                                  stem=stem, transcript=transcript), encoding="utf-8")
         written.append(key)
 
@@ -175,8 +180,10 @@ def run(args: argparse.Namespace) -> int:
         print(f"prompt template not found: {tpl_path}")
         return 1
     data = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+    repo_tpl_path = _anchor(out.get("prompt_template_repo", "synth/manual_prompt_repo.md"), ROOT)
+    repo_template = repo_tpl_path.read_text(encoding="utf-8") if repo_tpl_path.exists() else None
     res = build_pack(
-        data, kb_dir=kb_dir, template=tpl_path.read_text(encoding="utf-8"),
+        data, kb_dir=kb_dir, template=tpl_path.read_text(encoding="utf-8"), repo_template=repo_template,
         prompts_rel=out.get("prompts_dir", "kb/prompts"),
         highlights_rel=out.get("highlights_dir", "kb/highlights"),
         only_key=args.key, force=args.force, dry_run=args.dry_run, write_index=not args.no_index,

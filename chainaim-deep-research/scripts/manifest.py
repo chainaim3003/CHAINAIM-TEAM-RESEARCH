@@ -87,6 +87,7 @@ class Manifest:
         source_line: Optional[str] = None,
         title: Optional[str] = None,
         stem: Optional[str] = None,
+        kind: Optional[str] = None,
     ) -> None:
         """Record (or update) a manifest entry. Matches the contract schema.
 
@@ -103,6 +104,7 @@ class Manifest:
                 None, so entries written before PR-1 and after it share one schema.
             title: OPTIONAL source title (PR-2), e.g. the YouTube video title from oEmbed.
                 Omitted when unknown (lookup failed or naming="id").
+            kind: OPTIONAL source kind (PR-5), e.g. "github_repo". Omitted for YouTube entries.
             stem: OPTIONAL file name without extension used for this entry's files
                 (PR-2: "<Title> [<key>]"). Omitted when the file is named by key only.
         """
@@ -119,6 +121,8 @@ class Manifest:
             entry["title"] = title
         if stem is not None:
             entry["stem"] = stem
+        if kind is not None:
+            entry["kind"] = kind  # PR-5: e.g. "github_repo"; absent = YouTube (pre-PR-5 entries)
         self._data[key] = entry
         if self.autosave:
             self.save()

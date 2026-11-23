@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "32/32 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "45/45 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -105,13 +105,14 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | `--kb-dir PATH` | from config | override `output.kb_dir` |
 | `--source-list PATH` | from config | override `input.source_list` |
 | `--source-dir PATH` | from config | override `input.source_dir` |
+| `--refresh-github` | off | re-check extracted GitHub repos; re-extract only changed ones |
 | `--naming title_id\|id` | `output.naming` (`title_id`) | `title_id`: files named `<Title> [<id>]` (title via YouTube oEmbed); `id`: `<id>` with no title lookup |
 
 ### Flags (run_evals.py)
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `pack` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `pack` \| `github` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
@@ -158,6 +159,25 @@ uv run scripts/rename_kb.py --undo ../GENERAL-RESEARCH/output/rename_log_<ts>.js
 | `--throttle-s SEC` | `2.0` | pause between oEmbed lookups |
 | `--no-lookup` | off | never call oEmbed; rename only entries whose title is already in the manifest |
 | `--backup-dir PATH` | `<kb_dir>/kb_backup_<ts>` | manifest backup folder |
+
+## GitHub repos and accounts (PR-5, no AI)
+Put GitHub links in the same source list as YouTube links:
+```
+https://github.com/<owner>/<repo>          # one repo (also .git URLs and /tree/... links)
+https://github.com/<owner>                 # an account: its repos (most recently pushed first)
+```
+Each repo becomes `kb/full/<owner>__<repo> [github].md` with: repo facts (description, language,
+stars, license, topics, branch, commit), folder structure, README, and key files
+(package.json, pyproject.toml, requirements, Dockerfile, CLAUDE.md, docs/*.md, and the same files in
+subfolders). Every cut (too many paths, oversized file, size cap) is stated in the file.
+`build_kb_pack.py` then writes a repo-specific prompt (`synth/manual_prompt_repo.md`).
+
+- Free GitHub REST API. Public repos need no token (60 requests/hour). For 5,000/hour and private
+  repos you can read, put `GITHUB_TOKEN=...` in the repo-root `.env` (git-ignored; never paste it in chat).
+- Already-extracted repos are skipped (dedupe). `--refresh-github` re-checks them and re-extracts
+  only repos whose latest commit changed.
+- Limits in `config.yaml` → `github:` (`max_repos`, `max_files`, `max_file_bytes`, `max_total_bytes`,
+  `max_tree_entries`, `include_forks`, `include_archived`, `min_delay_s`, `min_remaining`, `timeout_s`).
 
 ## Summaries with ANY AI, by hand (no AI inside the agent)
 The agent never calls an AI. To summarise, it prepares one ready-to-paste prompt per transcript:
@@ -221,7 +241,7 @@ manifest.json              # dedupe ledger (idempotent re-runs); source_url + so
 cost_ledger.jsonl          # one line per run (items, free tool calls, tokens)
 ```
 
-## What V1 does NOT do (by design)
+## What it does NOT do (by design)
 - No LLM tokens spent by the pipeline (synthesis is manual on Max).
 - Non-YouTube links are skipped (Drive/GitHub = V3; documents = V2; deep research = V4).
 
