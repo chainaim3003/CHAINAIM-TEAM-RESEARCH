@@ -1,0 +1,1171 @@
+Yeah, hi everyone. I guess you are here
+because you want to learn about
+reasoning models. I'm super excited to
+yeah, walk you through the whole thing
+from conventional LLM to reinforcement
+learning to train reasoning models from
+scratch. And such from scratch
+implementations are actually
+tremendously useful for educational
+purposes because then we can really see
+uh yeah, the details of how something
+like this works and can appreciate like
+the methods behind it and have a better
+and deeper understanding than just
+looking at figures and uh big picture
+explanations. So, in this first video of
+the series, I wanted to essentially talk
+more about what this video series is
+going to look like and also
+uh give you like some setup
+recommendations so that in the next
+videos you can get started and follow
+along when we are coding and
+implementing a reasoning model from
+scratch. So, first um yeah, I have a few
+images here I wanted to walk you through
+just to give you some context. The rest
+of the videos, also this end of the
+video, will be very applied. So, the
+rest will be mainly coding focused, but
+I thought for this first video it might
+make sense just to, you know, lay lay
+the groundwork and introduce the broader
+concepts before we get into the
+nitty-gritty and exciting um coding
+details. So, um yeah, it all starts of
+course with a conventional LLM like a
+pre-trained LLM. And this is something,
+for example, the first generation of
+ChatGPT. When we used the first ChatGPT
+models, they were essentially chatbots
+like a regular LLMs. Then later in 2025
+um
+there was like a yeah, or there's still
+a startup company called DeepSeek that
+kind of like popularized
+the methodology behind reasoning models.
+So, we went essentially
+from the conventional LLM to the
+reasoning models. And these reasoning
+models, or we can also call them
+reasoning LLMs, are really just modified
+versions of a regular LLM. And this is
+what we will see later. We will see
+exactly how a reasoning model evolves
+from a conventional LLM. And so,
+reasoning models are right now, like all
+the models that are or most of the
+models that are commonly used, for
+example, from Claude Opus to the latest
+um ChatGPT uh GPT 5.6 model to um the
+latest Grok models, they are all
+reasoning models. But also on the open
+source side, for example, the latest
+Kimi models, the GLM 5. um 3 models, and
+so forth. Nowadays, most LLMs are
+actually reasoning models. We still just
+call them LLMs because a reasoning model
+in a sense is an LLM. It's the same
+architecture. It just has certain
+capabilities that these old-school or
+conventional LLMs didn't have. And yeah,
+we will learn more about that later in
+this um series of videos, so I don't
+want to jump too far ahead. Uh one more
+concept I wanted to introduce here,
+though, in these uh series of images is
+the agent harness. Because nowadays,
+most of you are probably using some sort
+of agent. It could be Open Claw,
+um Pi, the coding agent, or Codex,
+Claude Claude Code, and so forth. And
+so, they're all like um so-called agent
+harnesses. And this is essentially a
+software framework, an application
+around the model, the LLM itself.
+But what we are running in this harness
+is essentially this reasoning model
+these days. So, reasoning models, even
+though most of you are using harnesses
+these days, are still like the engine of
+this whole thing. So, I I think it's
+still tremendously useful to really
+understand how this works because
+uh I mean, not everyone needs to
+understand that, but if you are kind of
+passionate about AI, LLMs, and so forth,
+I think it really pays off to understand
+the fundamentals, like understanding how
+an LLM works, and then understanding how
+the reasoning model works, and maybe
+then in the future
+understanding how the harness works.
+So, there are lots of benefits from this
+from scratch coding approach because you
+know also most of you are probably,
+let's be honest, using LLMs for coding
+work because yeah, that's just
+efficient. There are some applications
+where you really want to have some,
+let's say, more control. And in that
+case, it still makes sense to be able to
+read code because you can identify,
+let's say, sloppy code, and then you can
+direct the agent to make certain
+changes. Also, it kind of like
+helps understanding like what is even
+possible with code, so you can kind of
+be more effective with LLMs. So, this is
+like, I would say, more like engineering
+101 these days why coding or reading
+code can be still useful skill. But
+here in this series of videos, the other
+benefit of this from scratch approach is
+really like the educational angle. So,
+there's this common saying that an image
+is worth more than a thousand words. So,
+meaning that with an image, you can
+convey a lot of ideas more effectively
+than just writing them down in text. And
+in a similar sense, I also think that in
+certain cases, looking at code is worth
+a thousand images because the code can
+be very
+unambiguous and precise, where
+sometimes, I mean, images are still
+useful. I use a lot of images, for
+example, in my books. There are usually
+about 20 images per chapter, also in my
+blog posts.
+But sometimes code is actually like the
+the core that really shows you, "Okay,
+this is how it works." And it tells you
+or gives you some sort of proof that it
+actually does work because I can show
+you all the pretty images. How do you
+know this is actually doing what I'm
+saying it is doing, right? So, it's you
+kind of like
+have an abstraction of something, but
+it's not it's not something real. It's
+more like a description of something.
+And the code is more like the proof then
+if you run the code and it works and you
+get some results that that thing that we
+talked about in this image actually
+works. And then also the image is
+usually just a summary and then the code
+you can actually see the details. For
+example, we will come back to a concept
+called temperature sampling. It can be
+very useful to first introduce this
+topic with images and then later on
+really
+just very concretely with a few lines of
+code really show you what it does and
+then running this code and see what
+effect it has. Cuz I think that that
+really goes a long way. So in that
+sense, yeah, even though most of you
+might not be coding everything from
+scratch in everyday life anymore, I
+think it has really tremendous
+educational value to approach certain
+problems from scratch. And this is what
+all this
+um let's say series of videos is going
+to be about.
+So
+with that another just because I worked
+on it just recently another example
+would be
+having a good solid understanding of how
+something works from scratch also allows
+you to pick up other topics later on
+more easily. For example, recently there
+was this hot topic
+of like cloth text watermarking. So
+they're watermarking text. And there
+were a lot of questions like oh, does it
+make my text worse and how does it work
+and can it be removed and
+how can it be detected? And
+these are really hard
+concepts to explain with just words or
+images. And so I think uh from scratch
+understanding really goes a long way to
+get a solid understanding. Okay, um this
+is how
+like the sampling in LLMs works. And
+then once you have an understanding of
+the sampling in LLMs, it really goes
+like step-by-step to the next topic and
+uh
+uh random seed sampling
+and so forth and scoring and
+generative generating one word at a time
+and connecting these topics to really
+get a solid understanding of how let's
+say cloud text watermarking works. So,
+it's like really almost like an
+investment in in future self. Like if
+there's a new relatively complicated LM
+topic,
+the more foundational knowledge you
+have, the easier it is to pick up a new
+topic in my opinion. So, yeah. So, I was
+able for example to put this together.
+It's like a 50-minute lecture in like 1
+or 2 days because you know, I already
+had
+a lot of figures and understanding of
+how this works. So, I just was very
+efficient [laughter]
+quick to put something together and
+explain it to people who had all these
+questions. So, just another benefit of
+why a good from scratch understanding is
+actually quite quite useful.
+Anyways, um
+so, we talked about this pipeline from
+conventional to reasoning to uh agent
+harnesses. And so, if you're interested
+in understanding the conventional LM in
+more detail, I have a very video series
+and also of course
+uh my book uh build a large language
+model from scratch. So, in this book, I
+cover or covered
+um all the essentials from coding the LM
+architecture to um pre-training and
+fine-tuning. So, um
+I have
+yeah. I will have a figure in a few
+moments. And then I have right now a new
+book called build a reasoning model from
+scratch. It just came out a few weeks
+ago. And this book essentially picks um
+up where the other book left off. So,
+the previous uh book was essentially the
+architecture and the pre-training. This
+is essentially this book is converting
+the conventional LM into a reasoning LM.
+So, I should also say um this book can
+be also read as a standalone. So, you
+don't need to
+necessarily have read the previous book.
+You can do them in any order, but more
+on that later. And uh if you're
+interested in the harnesses, um I also
+have um
+an article a long article about that, um
+coding an agent harness from scratch,
+but essentially to explain the
+components.
+So, um yeah, I I I got you covered from
+conventional LLMs. There's a video
+series. This video series is is the
+reasoning model. So, this series of
+videos starting with this video will be
+about this. And maybe in the future
+there might um may not be, we'll see, uh
+video series or book on um coding
+agents, coding a coding agent.
+Anyways, so like I mentioned before, uh
+if you want, you
+might, you know, want to check out this
+book. There's also a GitHub repository.
+I will show you in a few moments.
+So, this is essentially taking the base
+LLM, so coding the architecture,
+the pre-training,
+uh explaining basic pre-training, not a
+super expensive pre-training run, and
+then fine-tuning the model to have like
+a simple chatbot as a foundation as a
+foundational model. But like I said,
+this is not a requirement for the
+reasoning book. So, you can pick that up
+also later on. So, in the reasoning
+book, um you can read that, build the
+reasoning model based on an existing
+conventional LLM, and then later on fill
+in the gaps of how does the architecture
+actually work and look like? Can fill
+that uh knowledge in later with this
+book, for example, or video series.
+Um so, yeah, I have a a GitHub
+repository also with um the code
+examples. So, to make this a bit more
+interactive,
+so I
+maybe we'll just show you.
+Um so, you can find this uh
+the code for that on GitHub. And uh
+there's a link also to the book, and
+there is also, should be somewhere, uh
+link to the video series. It's also um
+yeah, here everything should be linked.
+Um
+should maybe update this link, for
+example, but there's plenty of material
+I curated over the last few years.
+So, um yeah, it's I guess like a little
+uh
+diversion from the topic, though,
+because main topic here is reasoning
+models. So, if but just if you want you
+can start here and come back later or
+you can directly
+go to the reasoning models. So, this
+book or this also also the series of
+videos I should say is based on this
+book. And so, we start with a
+conventional LLM and so in the book
+there will be or in the next video will
+be explained how we load this
+conventional LLM um the pre-trained
+weights. So, we won't go really over the
+architecture details although I do have
+an appendix chapter in this reasoning
+model uh book at the end if you're
+interested. Otherwise, uh like I
+mentioned, I recommend the large
+language model from scratch book which
+has more detail on all the aspects.
+Um of course, model evaluation is super
+important because if we are going to
+implement reasoning techniques, how do
+we know that they actually make the
+model better? So, the
+uh next um part in this
+course after the conventional LLM will
+be on evaluation. Then we will be toying
+around with some inference techniques.
+So, inference techniques are techniques
+that don't require training the model.
+And then of course, and I think that's
+like the most exciting topic to most of
+you is uh training the reasoning model.
+Like taking the conventional LLM and
+adding reinforcement learning to
+yeah, to teach the model how to reason
+in the LLM sense. And what that exactly
+means, how that's defined, we'll cover
+later.
+Um yeah, so the training will be
+reinforcement learning and also
+distillation because distillation is
+also hot topic and it is um
+it's interesting for
+at least two
+two reasons. So, first is it's also a
+big part nowadays of the pre-training
+because it um helps you
+to get
+or make pre-training more efficient
+because uh you kind of already have some
+structured data that is um relatively
+high quality from another LLM. And then
+of course, also it is often if you you
+to train a small model, it's often
+sufficient just to do distillation to
+get a really good small efficient model.
+But yeah, more about that when we
+actually get to the distillation video.
+Um so if you are interested in the book,
+this time actually it's also in color,
+which I think it's for me at least super
+excited exciting. I was yeah, having a
+lot of discussions with the publisher
+and they agreed to make it happen so
+that we found someone who was able to
+print all the books in color for this
+book. So I think that's pretty exciting.
+If you like if you like books, I think
+that makes it kind of also like just
+more enjoyable. So personally, I still,
+you know, the age of LLM and everything,
+I still read a lot of books because
+that's like where I can go offline away
+from my computer in my favorite chair
+and have some focused time. And
+yeah, if if we can make this nicer color
+figures, I think that that goes also a
+long way to
+to make this whole
+experience just even a bit nicer than
+before.
+Anyways,
+so I mentioned so I have a lot of kind
+of almost random figures here, but
+everything I I guess has or makes
+probably
+sense in a certain way because some
+people asked me regarding reasoning
+models like
+if we talk something about like
+Claude Opus or GPT 5.0, are they really
+reasoning models? Because people call
+them LLMs and like I mentioned before,
+these are essentially nowadays reasoning
+models. The difference is
+like the first generation of reasoning
+models, they had like a on and off
+switch or they were just just reasoning
+models. So there was the base model and
+there's the reasoning model and they
+were kind of like two distinct entities.
+Nowadays, it's also common to have just
+one model and it's both. It's like it
+can behave as a
+conventional LLM or it can be more like
+a reasoning model. And so there is
+usually nowadays a toggle where you can
+go from none, like no reasoning, to
+let's say maximum setting, so high
+reasoning, and you can see um
+that how how that um affects essentially
+also the performance. Like, there's like
+an effort level. So, in this particular
+case, um it's not clear if that's just
+the inference scaling or if it's
+changing the system prompt to have more
+reasoning-like behavior.
+Um but, we will get to what the
+distinction is, uh like, what is
+inference scaling later um in the series
+of videos. But, if you are interested, I
+do also have a standalone article um
+controlling reasoning efforts in
+in LLMs, and I look at all the
+different, let's say, open-source LLMs
+and how they implement the reasoning
+effort, and from that uh also deducing
+how GPT 5.6 likely works because they uh
+OpenAI had a GPT OSS model, an
+open-source model, where they had a
+system prompt to
+steer, let's say, the degree of
+reasoning. Um and from that, we might
+deduce that they do something similar in
+their main model line as well. But,
+yeah, there's more uh detail in that
+article. To be honest with you,
+I would not just go there right now and
+read it. Um I would
+maybe just bookmark this and come back
+to it after finishing the series of
+videos because
+in the series of videos, we will first
+just train a regular reasoning model,
+and I think this is more like a
+advanced follow-up if uh you already
+have like a solid understanding in a
+working reasoning model.
+This would be a cool like project to
+modify the reasoning model that you
+built in the series of videos, if that
+makes sense. So, but I just wanted to
+mention this because it's just a
+question that comes up when when people
+ask me questions, so I thought just
+prefacing this whole series of videos
+with this information that there is a
+controllable reasoning effort, and uh
+how
+let's say,
+GPT and Claude models relate to
+reasoning models might spare you some
+confusion later on. But that being said,
+um some readers, yeah, they also
+wondered
+>> [laughter]
+>> the best order how to read or work
+through the material. I think I just
+talked about this already. You can do it
+either or. I think if you are right now
+very excited about reasoning models, you
+know, just I guess follow this series of
+videos uh and learn about reasoning
+models and then maybe you can go back
+and cover the or watch the videos on
+build a large language model from
+scratch. Otherwise, if you you know, if
+you want to do things chronologically,
+the other way works too. It's really up
+to you. Both ways work and I don't even
+think that one way is better than the
+other. It's really just um you know,
+what you are currently more excited
+about. Uh so cuz that's also one
+important aspect. It sounds weird, but I
+think if you really do what you're
+currently enthusiastic about like in
+terms of learning, you just learn more
+efficiently. So if you right now more
+interested in the reasoning model
+aspect, just do that and come back later
+and do the large language model from
+scratch.
+Um
+yeah, so this whole video was originally
+uh planned to be about I was planning to
+show you how to get started, how to set
+up your code environment. I noticed I
+may have uh I don't really know what
+time it is, but I think I talked about
+20 about things for 20 minutes here.
+Um so I think it's now maybe time to get
+going and actually show you the setup.
+Um yeah, and so for this whole series of
+videos um
+the best way I would say to get the code
+is from GitHub because I keep it up to
+date and
+I don't plan to make any changes to the
+core chapters, but if something let's
+say breaks in a future PyTorch version,
+I would make a note there or
+add [snorts] a comment there. And so I
+think it's a good idea to follow the
+official um
+GitHub repository for these um details,
+for example. So yeah, you can find the
+uh reasoning from scratch repository on
+GitHub under github.com r a s p t uh and
+then reasoning from scratch. Um so,
+that's my account and that's yeah, just
+the
+main repository.
+Um yeah, and so, I wanted to show you
+basically first how to set this up on
+your own computer and then I will give
+you some tips if you are running this on
+a remote computer. And probably the
+question you might have right now, do I
+need a GPU? I will get to that in a
+moment.
+So, one thing at a time here. So, first
+of course, um so, if you want to get a
+copy, you can download uh
+download here the zip version of this.
+That's one way. Personally, I just, you
+know, copy the URL and um clone this um
+on my computer. So, let's go to here and
+make
+new folder maybe. Uh let's call that
+reasoning videos.
+And then
+oops.
+videos and then we can
+git clone this.
+Should be pretty quick, only a few
+seconds. I'm also trying to keep this
+small repository in terms of not adding
+any large checkpoint files. I will later
+in the videos explain how we can
+download the checkpoints. It's actually
+pretty easy, but I So, this this is only
+code here. There's no large training
+checkpoint. So, it should be only 5 MB,
+pretty quick. Um
+So, one thing I wanted to mention is I
+mean, there are multiple ways you can
+install it. So,
+there's a requirements.text file if you
+are using pip pip install in Python. So,
+that would be one way to do it. I should
+also mention as a prerequisite for this
+book um series of videos, I would
+recommend PyTorch and Python knowledge.
+So, um
+yeah, because most of the code examples
+will be from scratch, but we are still
+using PyTorch because then we don't have
+to worry about making everything super
+verbose and
+implementing CUDA kernels ourselves.
+This would be a very different course.
+So, PyTorch
+provides already a lot of
+things for us like back propagation
+implementation of that, so we don't have
+to worry about it and we can just focus
+on the from scratch parts in terms of
+the LLM itself.
+So,
+yeah, that would be
+the prerequisites. And there is a
+requirements.text file if you are pip
+user, so pip install
+so that would be typically
+something like pip install minus R
+requirements.
+So, I should first CD into here.
+pip install requirements.text.
+So, personally I'm not a pip user
+anymore. I recently or like not that
+recent, but like a few years ago started
+to use UV. And so, I really like UV
+because it kind of is two in one instead
+of managing your virtual environment
+separately and installing things. It's
+kind of like doing it all for you and
+it's kind of nice. It's just it's fast,
+very fast, works out of the box.
+And so,
+I think most people nowadays were more
+like the Python power users are
+switching to UV. So, I I also personally
+find it easier to manage thing like
+requirements and virtual environment.
+So,
+this would be then through the pi
+project.toml. You can check it out. So,
+what the versions are.
+I recommend
+also installing it from here instead of
+let's say if you're watching this video
+while later, still I would clone the
+repository instead of installing this by
+hand because I may may update this for
+example when when things change and
+there may be sometimes version conflicts
+on certain operating systems. And so,
+based on reader feedback, I usually try
+to keep things up to date here.
+Um yeah, but the original book is based
+on PyTorch 2.10. I just the other day I
+tested everything in 2.13 and everything
+just works perfectly in 2.13 without any
+any code changes or any output changes.
+So,
+whatever you want to use right now, um
+yeah, works.
+Uh yeah, so back to the topic. So, what
+I wanted to say is yeah, so I already
+have UV installed, but oops. But, if you
+want to install UV, I would go to this
+website. Um basically, if you Google UV,
+you will probably find it. And then
+there's installation here. Uh there are
+multiple ways to install it. You can use
+the curl. Some people, you know, they
+don't like curl because this would uh
+execute an arbitrary um shell script and
+you don't know what's in in that uh
+shell script, right? And so, I
+personally I trust this company that uh
+I mean, you can also just download it
+before calling sh and and investigate
+what's in there. That's maybe
+a good approach. Alternatively,
+uh there are also other ways. You can
+use um pip to install it, Homebrew,
+um
+and other other methods here. So, yeah,
+whatever uh feels comfortable for you, I
+think this is still the easiest way.
+Whatever feels comfortable for you on
+macOS and Linux and Windows, use that to
+install it. And uh yeah, then once it's
+installed, uh you don't have to manually
+install anything. So, the
+equivalent to this one in UV, I mean,
+there are different commands, but you
+could, for example, do UV sync and it
+will sync your current environment with
+what's in the pipe project toml. Or more
+precisely, in this case, it's not just
+what's in the pipe uh
+pipe project.toml. There is a lock file
+I created. And so, here, this is kind of
+already resolving the specific version
+versions of different packages, how they
+interact for different operating systems
+and so forth. And so, by default, if you
+do UV sync, it will use this
+whole gigantic file. This was generated
+by running the pipe project bottom up,
+but it's kind of more even more precise
+in terms of this is
+version number I've been using and that
+worked
+cuz
+I mean, I I don't want to give you a
+whole lecture on pipe project to my
+sorry, I don't want to make it too
+boring here, but there might be certain
+versions of pipe torch pipe torch that
+only work with certain versions of
+let's say
+tokenizers or something like that. And
+And so, that case, this would already
+resolve that kind of
+relationship. Anyway, so that is
+basically that. It should be super fast.
+It just took a few seconds. Super Yeah,
+super fast. And um
+So, if you look, um
+it just looks like the same as before,
+but
+Um so, there is now say so.
+Let's just do this.
+Uh
+there is now a venv, so a virtual
+environment that contains um yeah, all
+the packages that we just installed in
+an Python executable. So, everything is
+already there. So, it's creating a
+virtual environment inside there. And
+so, when you install anything uh
+additional here or just when we did the
+UV sync sync, it won't mess with your
+system Python, which is kind of
+important because you don't want to mess
+up your the rest of the computer. You
+maybe only want to use
+the software versions listed here in
+this specific project. So, this will be
+only this venv is will be only specific
+to our project here, which sits in in
+this folder. And so, if we execute code
+out of this folder, it will use this
+virtual environment here with these
+packages, but it won't touch anything
+else on your computer, which is actually
+quite nice. So, it's Once, let's say you
+are sick of this project or finished
+with this project, you can just delete
+this folder and your computer will work
+the same way as before. There's no
+additional cleanup necessary. There's no
+modification of your system Python and
+anything like that. So, that's kind of
+like the cool um advantage of using UV
+with the virtual environment already set
+up for you. There are other tools that
+you I mean, there's then virtual env for
+Python, but then you have to manage it
+more manually, and this does everything
+for you. It's just simpler uh in my
+opinion.
+Anyways, um
+so, the fifth step here, UV run Jupyter
+Lab. So, now you can just essentially
+run the notebook, the code um in Jupyter
+Lab. So, you can also use Visual Studio
+Code. Um more about that in a moment.
+But yeah, if you run this, it should
+basically launch Jupyter in your
+primary browser.
+And from there
+so, it's something I just worked on
+yesterday. It's kind of caching this.
+Um so yeah, it's
+can, for example,
+just run all the code here. So,
+everything should already work. So, here
+when I refresh this,
+so, you can see it changed a bit because
+the versions are slightly different than
+what I had in there before.
+But um yeah, so this is already set up
+and should be ready to go, basically.
+So, I can
+just to show you this is actually works.
+So, I can do import torch and then torch
+{dot}
+version
+and so forth. And so, this is a working
+uh code environment. It's a bit slow
+because torch is a big patch package
+these days, but yeah. So, this is a
+working um Jupyter
+environment. And it just took a few
+seconds to set up with UV sync.
+Okay. So, this is Jupyter Lab on my
+computer.
+Now,
+some people, historically, it can happen
+that if you have different things in
+your shell environment, if you let's say
+run things without the UV command, so
+the UV command you'll be run should
+automatically use the venth. But if
+you're using pip, for example, it might
+happen that
+something like this doesn't work.
+There's some conflict. And usually, in
+my experience, working with a lot of
+people in tutorials and so forth, it's
+often that
+there's a different installation
+somewhere on your computer, a different
+Jupyter Lab installation, and that will
+grab a different Python version. And
+then, if you install something on the
+command line, it won't match really what
+you're seeing here. So,
+um to find out if that's happening, I
+usually find it useful to let me just
+make this smaller.
+Um going to make this bigger, maybe. So,
+I usually find it useful to just
+double-check. For example, we can
+Let's do it this. We can um
+print this prefix here, and this will
+tell us where
+um the virtual environment is that we
+are using. And so, you can double-check,
+okay, this is indeed the one the venth
+here. And if it's not, well, then you
+may have to look into why. So, I I can't
+tell you right now what the fix would
+be. It really depends on the individual
+case, but this would give you an pointer
+to what to look into if you, for
+example, have issues with
+executing, let's say, something like
+this.
+Um
+to more be more precise, you can also do
+the executable.
+And this one will tell you which Python
+executable you're using. So, here we can
+see we're using the Python executable
+inside this virtual environment.
+The PyTorch version, yeah, we already
+looked at this here. And optionally, if
+you are using a computer that has a CUDA
+GPU, you can also do torch.cuda
+is available.
+And this one will show true if you have
+a CUDA GPU.
+Here in this case, we I'm using a Mac,
+so this one doesn't have a CUDA device,
+so this is false. But if you have
+computer with a GPU,
+CUDA GPU, and you know that it usually
+works,
+and you set everything up, it can still
+happen that it is false, and that is
+usually
+if something with a PyTorch version went
+wrong, or if
+your computer has a graphics card or
+driver that is not compatible with the
+CUDA driver that comes with PyTorch, or
+something like that. So it's always I
+feel like a good way to check
+a
+good way to check
+before you run any code that if you
+expect to have it,
+if you expect to have CUDA GPU to really
+make sure it indeed has CUDA support. In
+this case,
+this is a Mac, so this
+should have the MPS, which is I think it
+stands for Metal Performance Shader. And
+so this is Apple's Yeah,
+library or framework for running
+something like CUDA,
+like machine learning AI,
+let's call it matrix multiplications, I
+don't know.
+But they like an efficient library for
+that using their
+GPU, like on the Apple Silicon. But more
+on that later when we are actually
+running the first chapter code in the
+next video, cuz you I mean, nowadays
+this has come a long way, it's pretty
+stable. When I worked on Build a Large
+Language Model from Scratch,
+I did not recommend MPS because
+you sometimes get really unstable
+training, like things don't converge
+where they should converge. If you run
+it on a CPU or CUDA GPU, you see the
+model converges during training, but on
+the MPS device it doesn't. So for this
+book, it is pretty safe to use MPS, but
+we will revisit this um
+when we actually run the first code in
+the next video.
+Okay, so this was in a nutshell just a
+setup on this local computer. The
+question is maybe that you might have
+now, "Okay, do I actually need the
+GPUs?" So, I ran most of the code on a
+Mac uh mini and so the reason is
+I wanted to make it accessible to most
+people. So, the goal here is to train a
+small reasoning model to illustrate how
+reasoning works. It's not to build a
+DeepSeq version 3 version 4
+um model that is that is like really big
+and
+also really good, but would be very
+expensive. So, even if you had GPUs
+training a DeepSeq version 3 or 4 um
+type model would require millions of
+dollars, which you probably don't have
+and I don't have. And so, um in that
+case, I wanted to keep it small because
+the focus here is not to replicate that
+because that would take a whole team,
+like many months of uh training
+and also a lot of money and it already
+exists, right? So, if you want to use
+DeepSeq version 4, you can download it.
+It's open source, so you can use that.
+Um that's not the goal here. The goal is
+to illustrate how the techniques behind
+that work. And for that, you don't need
+this big model. You can demonstrate the
+same thing on a smaller model. And so, I
+made sure that most of the code works on
+let's say consumer hardware,
+but there are chapters um I would say 6,
+7, and 8 where having a GPU would be
+pretty good because um you know,
+otherwise it would take forever.
+Uh we will get to that when we get to
+chapters 6 um 7 and 8. Um so, I will run
+this code on a GPU, but if you're
+curious,
+I mean, I can also give you some
+recommendations for platforms then. Um
+but uh for now, if you have a GPU,
+how would you set this up? For example,
+if you have a So, if you have
+a GPU on this computer you're running it
+on on your local computer, then great. I
+think this
+would already be sufficient. Uh this
+would return true and then you are good
+to go. But if you are renting a GPU, for
+example, from any of the GPU providers
+out there, I maybe don't want to name a
+specific one because I don't want to
+advertise anything here over something
+else because I'm Yeah, I'm not
+affiliated with any of them. And so,
+there are many options out there and
+they change all the time. So, even if I
+made a recommendation right now, it it
+might be different in a few weeks, a few
+months. But let's say you rented a
+an instance, a compute instance, a GPU
+somewhere.
+Usually it's a compute instance with a
+Visual Studio uh uh
+support, or you can SSH into it. So,
+personally, um I for example, I have a
+small DGX Spark on my desk that I use
+for experiments like that. It's not the
+most powerful GPU, but it is actually
+quite nice because it's local and um
+it just fun to tinker with it. And so,
+in this case, um
+you can connect through uh to your GPU
+in Visual Studio Code. Um
+the same is true if it's a
+server somewhere else. In my case, it's
+on my local network, but if it's
+somewhere else on the internet, the same
+thing would apply. You would um you can
+use um Visual Studio Code.
+And um
+I you would have to install it, I guess,
+but
+there is Oops, it's not the re-command.
+Um
+Uh I think it's shift command P.
+You bring up that menu, and then there
+is this uh remote
+SSH. Um I think you have to probably
+install it uh in the plugin menu. If
+not, it might already be built in. But
+there is this um connect to host, and
+then you can Yeah, you can
+connect. Um Yeah, so or
+personally, I also just go to the menu
+here. Uh it's in that case a specific
+DGX Spark menu. Go to VS Code, and I'm
+in my machine. And um if you are in a
+machine like that, um you can also then
+run
+any like anything I've shown you. Um you
+can also use Jupyter Lab, but you might
+find it easier to use just the VS Code
+experience, where you can also open
+Jupyter notebooks. So, the workflow
+would be the same. We would be um
+cloning first the repository. So, let me
+maybe
+uh
+go to a folder Oops, it's too big.
+There's a lot of
+stuff going on. So, I'm just trying to
+show you how I would do that. So, if I
+go to, let's say, developer and make a
+new folder, uh
+reasoning videos.
+CD into that folder. Oops.
+Here.
+Reasoning videos. And then I would
+basically clone this again. So, I would
+go here.
+Reasoning from scratch.
+And
+do a Git clone.
+Here. And then again, I would CD into
+it, of course. That's uh
+easy to forget. Install UV. In this
+case, I already installed it. And then
+do my UV sync. So, these are exactly the
+same steps that I did before. My local
+computer.
+Very fast. Um and the next step would be
+So, I I find this useful because uh
+again, before you are even opening the
+notebook, you can see what the Python
+executable is. So, I would do UV
+run Oops. Python.
+Let's see. Import
+sys. And then uh I would
+this print executable. Um so, this is
+like the same we did in the notebook.
+And then we get the Python executable
+executable. In this case, this here.
+And then if you open a notebook, so
+then I would uh launch the notebook.
+Usually you can do it with um
+code dot.
+Um yeah, this brings up new window for
+some reason, but then you can um open
+the notebook here
+and select the kernel.
+And here
+you would go to Python environments.
+Um create Python environment
+and enter the interpreter path. So, this
+is the path um
+that we just So, I copy-pasted it that
+we just got on the command line. So, you
+enter this one.
+And then you should be good to go. So,
+this one should now execute.
+And so, this is running the
+environment that we had previously. So,
+the Sorry, the environment that we just
+installed with UV. And you can see now
+here is like a CU130.
+So, this means we now have a PyTorch
+version with CUDA support. So, this is
+uh CUDA 13 essentially, 13.0.
+Now,
+if you want a So, it might be uh
+happening that Let's just just double
+check import torch.
+That your environment
+doesn't have Oops. CUDA support.
+And so, let's just double check. In this
+case it does. If it doesn't, you may
+have to uninstall or delete um torch or
+just update torch. So,
+I don't know why that happens, but to
+some people it sometimes happens and I
+think that's sometimes when there's some
+driver incompatib- incompatibility. And
+so, in that case um you can also go to
+pytorch.org
+and they have like an installer menu
+here
+where you may
+have to select a different command. You
+can So, if you have um UV, you can also,
+for example, if you want this one, you
+could technically um go there.
+So, I I usually don't like doing that,
+but it's like a workaround. You could
+technically do uh oops
+UV pip install and then install that
+specific version.
+Uh if you do the
+exclamation mark at the front, it's
+executing this as a shell command.
+Uh but anyways, so that's one way. Uh
+the other way
+would be essentially doing UV sync
+upgrade package torch. So, just to show
+you um where did my window go?
+So, I'm doing this here in the
+in the terminal. It's kind of very
+cramped here.
+Sorry. Um
+Just make this maybe a bit smaller.
+So, I would type UV
+sync
+oops
+upgrade into upgrade package torch.
+And this should update my PyTorch.
+So, now let's see what it did. So, we
+have 2.13
+uh still CUDA 13. And so, if I restart
+this notebook,
+it should technically um
+use the most recent PyTorch version. So,
+let's just double-check.
+So, yeah, we can see this successfully
+updated. So, yeah, uh UV should be, I
+think, the recommended way. I would say
+this is just easier. It just mostly
+works out of the box. And um so, yeah, I
+hope this, you know, was an interesting
+video. I hope you come back for the next
+video.
+Um it might be when I'm uploading this,
+it might be a while until the next video
+drops. But, yeah, in any case, I uh if
+you have any questions, so best places
+to ask or would be, for example,
+personally, um I think would be the best
+way would be actually in GitHub because
+here on GitHub um I can track the issues
+also for general questions the new
+discussion would be best
+multiple people might be answering
+or able to answer if I'm not available
+or it takes me a bit longer to see it.
+If it's a bug or something you can also
+update
+you can open a new issue here. So these
+two places would I think be the best
+ways because you can directly point to
+the code. The Manning Forum is also
+pretty good because every time there is
+a forum entry I get an email. So I
+usually see that faster. So if you have
+a copy of the book and access to the
+Manning Forum that would be even more
+preferred because then I even see it
+faster. So in that case yeah, I hope you
+found it interesting. I'm hoping you
+will be back for the next video where we
+will then first
+yeah, load a conventional LLM.
+I will maybe also teach you a few more
+things about PyTorch, how to speed up
+the code and everything, how basic LLM
+text generation works which I think is
+also important foundation and then we
+will go on from there, talk about model
+evaluation, inference, scaling and
+training. So yeah, I hope you I see you
+next time. Until then, bye.

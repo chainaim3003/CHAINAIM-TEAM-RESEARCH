@@ -88,5 +88,50 @@
     },
     "status": "extracted",
     "ts": "2026-06-23T11:15:56.197890+00:00"
+  },
+  "BOOfy3Yshtw": {
+    "source_url": "https://www.youtube.com/watch?v=BOOfy3Yshtw",
+    "content_hash": "sha256-56828aebcd56f7e1",
+    "full_paths": {
+      "txt": "kb/full/BOOfy3Yshtw.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-08-12T17:17:58.852355+00:00"
+  },
+  "8G_1-3IO4ZQ": {
+    "source_url": "https://www.youtube.com/watch?v=8G_1-3IO4ZQ",
+    "content_hash": "sha256-5578cf37d7dc7318",
+    "full_paths": {
+      "txt": "kb/full/8G_1-3IO4ZQ.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-08-12T17:21:58.110519+00:00"
+  },
+  "8D8ewFBJfFM": {
+    "source_url": "https://youtu.be/8D8ewFBJfFM?si=tQFlhNskLeShupu6",
+    "content_hash": "sha256-fd195ff44e0daceb",
+    "full_paths": {
+      "txt": "kb/full/8D8ewFBJfFM.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-08-18T08:46:09.004002+00:00"
+  },
+  "Kh9mqTzjuEQ": {
+    "source_url": "https://www.youtube.com/watch?v=Kh9mqTzjuEQ",
+    "content_hash": "sha256-597585fe9a0ee484",
+    "full_paths": {
+      "txt": "kb/full/Kh9mqTzjuEQ.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-09-02T12:49:53.324351+00:00"
+  },
+  "E61gUCKcx2s": {
+    "source_url": "https://www.youtube.com/watch?v=E61gUCKcx2s",
+    "content_hash": "sha256-75acdb546a3e1602",
+    "full_paths": {
+      "txt": "kb/full/E61gUCKcx2s.txt"
+    },
+    "status": "extracted",
+    "ts": "2026-09-02T13:03:32.869812+00:00"
   }
 }
