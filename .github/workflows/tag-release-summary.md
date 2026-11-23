@@ -15,6 +15,36 @@ network:
   allowed:
     - defaults
 
+# INTEGRITY FILTERING IS DISABLED ON THIS REPOSITORY. Read before changing.
+#
+# Integrity filtering stops the agent reading GitHub content written by people
+# without a strong association to the repo, so an outsider cannot hide
+# instructions in a commit message or pull request and steer it. Public
+# repositories get min-integrity: approved by default.
+#
+# This repository was made public on 2026-11-23 to enable branch protection,
+# which GitHub does not offer on private repositories under a free plan. On
+# the sibling repo ACTUS-UI-Redesign-3 that same default blocked EVERY commit,
+# including the team's own, and produced four empty release reports at roughly
+# 13 credits each. Disabled here preemptively rather than after the fact.
+#
+# Why this is acceptable: only team members can write to this repository, and
+# branch protection now requires a pull request, a passing eval suite and one
+# approval before anything reaches main. What still protects this workflow:
+# the agent is read-only, the job that writes is separate from the job that
+# reasons, threat detection scans every output, the only possible output is
+# one issue, and the network is restricted to an allowlist. The worst outcome
+# of a hostile commit message is a misleading issue.
+#
+# TURN THIS BACK ON (min-integrity: approved) IF this repository ever accepts
+# a pull request from someone outside the team. Now that it is public, that is
+# a real possibility rather than a theoretical one.
+tools:
+  bash: false
+  cli-proxy: false
+  github:
+    min-integrity: none
+
 safe-outputs:
   create-issue:
     title-prefix: "[release] "
