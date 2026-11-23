@@ -2,7 +2,7 @@
 
 Implements the contract interface (DESIGN/01-architecture-contract.md section 4):
     manifest.seen(key) -> bool
-    manifest.record(key, url, hash, paths, status)
+    manifest.record(key, url, hash, paths, status, *, source_line=None)
 
 The manifest is a JSON object keyed by source key (e.g. the 11-char YouTube id).
 It is the durable record of what has already been extracted, so re-runs are
@@ -83,17 +83,40 @@ class Manifest:
         content_hash_value: str,
         paths: Dict[str, str],
         status: str = "extracted",
+        *,
+        source_line: Optional[str] = None,
     ) -> None:
-        """Record (or update) a manifest entry. Matches the contract schema."""
-        self._data[key] = {
+        """Record (or update) a manifest entry. Matches the contract schema.
+
+        Args:
+            key: source key (e.g. the 11-char YouTube id).
+            url: CANONICAL source URL (e.g. https://www.youtube.com/watch?v=<id>). Callers
+                must pass a clean URL here, not the raw input line (PR-1 fix: earlier runs
+                stored whole input-table rows such as "| 96 | 6/22/26 | ... |").
+            content_hash_value: content hash of the extracted text (see content_hash()).
+            paths: {fmt: path relative to kb_dir} written by the extractor.
+            status: entry status; "extracted" is what the dedupe gate checks.
+            source_line: OPTIONAL original input line, kept verbatim as an audit trail of
+                where the source came from (notes, table rows). Omitted from the entry when
+                None, so entries written before PR-1 and after it share one schema.
+        """
+        entry: Dict[str, Any] = {
             "source_url": url,
             "content_hash": content_hash_value,
             "full_paths": paths,
             "status": status,
             "ts": utc_now_iso(),
         }
+        if source_line is not None:
+            entry["source_line"] = source_line
+        self._data[key] = entry
         if self.autosave:
             self.save()
+
+    def raw(self) -> Dict[str, Dict[str, Any]]:
+        """Return the underlying {key: entry} dict (read access for tools such as
+        migrate_manifest.py). Mutating it does not persist anything until save()."""
+        return self._data
 
     def __len__(self) -> int:
         return len(self._data)

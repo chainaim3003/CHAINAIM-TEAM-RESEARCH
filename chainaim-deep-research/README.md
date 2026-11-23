@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "13/13 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "17/17 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -110,13 +110,37 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
 > temporary data and use an OFFLINE test double (`evals/fixtures/fake_transcript.py`), so they
 > do NOT read `sources.txt` / `input.source_dir` and make ZERO YouTube calls. Only `--fixtures`
 > configures their input.
+
+## Manifest `source_url` fix (PR-1, one-time)
+Runs before PR-1 stored the whole input line as `source_url` (e.g. a pasted table row
+`| 96 | 6/22/26 | ... | https://www.youtube.com/watch?v=<id> | note |`). New runs now store:
+- `source_url`  — the canonical link `https://www.youtube.com/watch?v=<id>`
+- `source_line` — the original input line, kept verbatim as an audit trail
+
+Fix entries written before PR-1 (no LLM, no network, transcripts untouched):
+```bash
+uv run scripts/migrate_manifest.py            # DRY RUN (default): show what would change
+uv run scripts/migrate_manifest.py --apply    # back up manifest.json, then fix it
+uv run scripts/migrate_manifest.py            # re-run: expect "nothing to change."
+```
+The backup goes to `<kb_dir>/kb_backup_<UTC timestamp>/manifest.json` (git-ignored). Undo by
+copying it back over `manifest.json`.
+
+### Flags (migrate_manifest.py)
+| Flag | Default | Effect |
+|------|---------|--------|
+| `--config PATH` | `config.yaml` | config file (reads `output.kb_dir`, `output.manifest`) |
+| `--kb-dir PATH` | from config | override `output.kb_dir` |
+| `--dry-run` | on | show the plan only; writes nothing |
+| `--apply` | off | back up, then write the fixed manifest |
+| `--backup-dir PATH` | `<kb_dir>/kb_backup_<ts>` | where the backup is written (never overwrites an existing backup) |
 
 ## After extraction (manual synthesis — V1)
 For each new `kb/full/<key>.txt`, open a Claude Code session on Max and follow
@@ -127,7 +151,7 @@ For each new `kb/full/<key>.txt`, open a Claude Code session on Max and follow
 ```
 kb/full/<key>.txt          # extracted transcript (raw; never edited by synthesis)
 kb/highlights/<key>.md     # synthesized entry (manual in V1)
-manifest.json              # dedupe ledger (idempotent re-runs)
+manifest.json              # dedupe ledger (idempotent re-runs); source_url + source_line per entry
 cost_ledger.jsonl          # one line per run (items, free tool calls, tokens)
 ```
 

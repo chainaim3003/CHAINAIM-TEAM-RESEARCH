@@ -72,6 +72,20 @@ def classify(line: str) -> Tuple[str, Optional[str]]:
     return "unknown", None
 
 
+def canonical_url(kind: str, key: str) -> str:
+    """Return the clean, canonical URL for a classified source.
+
+    The manifest stores THIS (not the raw input line) as `source_url`, so every entry has a
+    usable link no matter how the line was written (youtu.be/..., ?si= tracking params,
+    notes after the link, or a pasted table row). The raw line is kept separately as
+    `source_line`. Raises ValueError for kinds that have no canonical form yet, so a new
+    kind can never silently store a wrong URL.
+    """
+    if kind == "youtube":
+        return f"https://www.youtube.com/watch?v={key}"
+    raise ValueError(f"no canonical URL rule for kind '{kind}'")
+
+
 # ----- config + path resolution -----
 def load_config(path: Path) -> dict:
     if not path.exists():
@@ -164,7 +178,10 @@ def run(args: argparse.Namespace) -> int:
         if manifest.seen(key) and not args.force:
             skipped_dedupe += 1
             continue
-        planned.append({"key": key, "url": item["url"]})
+        # url  = canonical link (stored as manifest source_url and passed to the extractor;
+        #        the transcript skill accepts watch?v= URLs)
+        # line = the original input line, kept verbatim as manifest source_line (audit trail)
+        planned.append({"key": key, "url": canonical_url(kind, key), "line": item["url"]})
         if args.max_videos is not None and len(planned) >= args.max_videos:
             break
 
@@ -178,7 +195,7 @@ def run(args: argparse.Namespace) -> int:
     if args.dry_run:
         print("\n-- DRY RUN: would extract --")
         for p in planned:
-            print(f"    {p['key']}  <-  {p['url']}")
+            print(f"    {p['key']}  <-  {p['line']}")
         print("(no files written, no manifest/ledger changes)")
         return 0
 
@@ -195,7 +212,8 @@ def run(args: argparse.Namespace) -> int:
         )
         ledger.add(free_tool_calls=1)
         if ok:
-            manifest.record(p["key"], p["url"], info, file_paths, status="extracted")
+            manifest.record(p["key"], p["url"], info, file_paths, status="extracted",
+                            source_line=p["line"])
             ledger.add(items_processed=1)
             extracted += 1
             print(f"  [ok] {p['key']} -> {file_paths.get('txt', next(iter(file_paths.values()), '?'))}")

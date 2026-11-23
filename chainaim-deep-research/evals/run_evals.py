@@ -10,7 +10,7 @@ separate suites keyed off model.provider; they are intentionally NOT run in V1.
 Flags (Rule 8):
     --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
     --verbose        print each case, not just the summary
-    --only NAME      run only the named suite (classify|ingest|dedupe|extract)
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest)
 
 Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
 """
@@ -29,7 +29,10 @@ PKG = HERE.parent
 sys.path.insert(0, str(PKG / "scripts"))
 sys.path.insert(0, str(PKG))
 
-from orchestrate import classify            # noqa: E402
+from orchestrate import classify, canonical_url  # noqa: E402
+from migrate_manifest import (                  # noqa: E402
+    apply_migration, backup_manifest, plan_migration,
+)
 from manifest import Manifest                # noqa: E402
 from throttle import Throttle                # noqa: E402
 from ingest.local_dir import collect_sources  # noqa: E402
@@ -134,11 +137,109 @@ def suite_dedupe(fixtures: Path, verbose: bool) -> Result:
     return (1 if not fails else 0), 1, fails
 
 
+def suite_manifest(fixtures: Path, verbose: bool) -> Result:
+    """PR-1: canonical source_url, source_line audit trail, and the one-time migration.
+
+    Offline: temp directory only, no network, no real KB touched. 4 checks:
+      1. canonical_url() gives the clean watch?v= link; unknown kinds raise.
+      2. record(source_line=...) stores both fields; record() without it keeps the old
+         schema (backward compatible) and the dedupe gate still works.
+      3. plan/apply migration: a pre-PR-1 table-row entry is fixed, the original text is
+         kept in source_line, a clean entry is left alone, input is not mutated, and a
+         second plan finds nothing (idempotent).
+      4. backup_manifest() copies the file and refuses to overwrite an existing backup.
+    """
+    fails: List[str] = []
+    passed = 0
+    vid = "wEpw20UIfzI"
+    clean = f"https://www.youtube.com/watch?v={vid}"
+    row = f"| 96 | 6/22/26 | 10:15 AM | https://www.youtube.com/watch?v={vid} | co-work |"
+
+    # 1. canonical_url
+    c1 = []
+    kind, key = classify(row)
+    if (kind, key) != ("youtube", vid):
+        c1.append(f"classify(table row) -> ({kind},{key})")
+    if canonical_url("youtube", vid) != clean:
+        c1.append(f"canonical_url -> {canonical_url('youtube', vid)!r}")
+    try:
+        canonical_url("unknown", "x")
+        c1.append("canonical_url('unknown') did not raise")
+    except ValueError:
+        pass
+    passed += 0 if c1 else 1
+    fails += [f"canonical: {m}" for m in c1]
+
+    with tempfile.TemporaryDirectory() as tds:
+        td = Path(tds)
+
+        # 2. record with / without source_line
+        c2 = []
+        m = Manifest(td / "m2.json")
+        m.record(vid, clean, "sha256-x", {"txt": f"kb/full/{vid}.txt"}, source_line=row)
+        m.record("dQw4w9WgXcQ", "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "sha256-y", {})
+        reloaded = Manifest(td / "m2.json")
+        e1, e2 = reloaded.get(vid) or {}, reloaded.get("dQw4w9WgXcQ") or {}
+        if e1.get("source_url") != clean or e1.get("source_line") != row:
+            c2.append(f"with source_line -> {e1}")
+        if "source_line" in e2:
+            c2.append("record() without source_line wrote a source_line field")
+        if not (reloaded.seen(vid) and reloaded.seen("dQw4w9WgXcQ")):
+            c2.append("dedupe gate: seen() False after record")
+        passed += 0 if c2 else 1
+        fails += [f"record: {m_}" for m_ in c2]
+
+        # 3. migration plan / apply / idempotency
+        c3 = []
+        old_data = {
+            vid: {"source_url": row, "content_hash": "h1", "full_paths": {"txt": "a"},
+                  "status": "extracted", "ts": "t1"},
+            "dQw4w9WgXcQ": {"source_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                            "content_hash": "h2", "full_paths": {}, "status": "extracted", "ts": "t2"},
+        }
+        snapshot = json.dumps(old_data, sort_keys=True)
+        plan = plan_migration(old_data)
+        if [c["key"] for c in plan["changes"]] != [vid] or plan["unchanged"] != ["dQw4w9WgXcQ"]:
+            c3.append(f"plan -> {plan}")
+        new_data = apply_migration(old_data, plan["changes"])
+        fixed = new_data[vid]
+        if fixed.get("source_url") != clean or fixed.get("source_line") != row:
+            c3.append(f"apply -> {fixed}")
+        if fixed.get("content_hash") != "h1" or fixed.get("ts") != "t1" or fixed.get("full_paths") != {"txt": "a"}:
+            c3.append("apply changed fields other than source_url/source_line")
+        if json.dumps(old_data, sort_keys=True) != snapshot:
+            c3.append("apply_migration mutated its input")
+        if plan_migration(new_data)["changes"]:
+            c3.append("second plan still finds changes (not idempotent)")
+        passed += 0 if c3 else 1
+        fails += [f"migrate: {m_}" for m_ in c3]
+
+        # 4. backup
+        c4 = []
+        mp = td / "manifest.json"
+        mp.write_text(json.dumps(old_data), encoding="utf-8")
+        b = backup_manifest(mp, td / "kb_backup_test")
+        if not b.exists() or b.read_text(encoding="utf-8") != mp.read_text(encoding="utf-8"):
+            c4.append("backup missing or differs from source")
+        try:
+            backup_manifest(mp, td / "kb_backup_test")
+            c4.append("second backup into same folder did not refuse")
+        except FileExistsError:
+            pass
+        passed += 0 if c4 else 1
+        fails += [f"backup: {m_}" for m_ in c4]
+
+    if verbose:
+        print(f"  manifest -> {passed}/4 checks ok")
+    return passed, 4, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
     "extract": suite_extract,
     "dedupe": suite_dedupe,
+    "manifest": suite_manifest,
 }
 
 
