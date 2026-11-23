@@ -97,13 +97,18 @@ Design rules kept from `DESIGN/00-conceptual-design.md`:
 ## 2. Git workflow (used by every PR)
 
 ### 2.1 Branch / tag conventions
-- Branches: `feat/<name>`, `fix/<name>`, `chore/<name>` off `main`.
-- One PR per numbered item. PR merges into `main` (squash merge).
+- **Branch workflow (changed 2026-11-23, from PR-4 on):** all work happens on ONE long-lived
+  branch `dev`. One PR per numbered item, `dev` → `main`, merged with a **merge commit**
+  (not squash — squash would make `dev` diverge from `main`). One PR open at a time.
+  After each merge: `git pull origin main` on `dev`, then tag `main`.
+  Repo settings (owner): "Allow merge commits" on, "Allow auto-merge" on,
+  "Automatically delete head branches" off. PR-0..PR-3 used per-PR branches + squash.
 - Tags: annotated, semver. Current latest tag is `v1.0.4`. Each merged PR bumps the
   version shown in its section. End of Phase 1 = `v2.0.0`, Phase 2 = `v3.0.0`, Phase 3 = `v4.0.0`.
 - Every tag push triggers `tag-release-summary` (AI credits). Tagging per PR = one summary per PR.
-- Your branch is deleted on merge, so **every PR starts with a fresh branch from the latest `main`**
-  and every step starts by checking the current branch (`git branch --show-current`).
+- Every step starts by checking the current branch (`git branch --show-current` → `dev`).
+- Auto-merge: every PR command ends with `gh pr merge --auto --merge`; the code owner
+  (`chainaim3003`) approves and GitHub merges once CI passes.
 - Branch protection needs 1 approval. GitHub does not let a PR author approve their own PR, so
   if you are the only collaborator you will need an admin bypass or another reviewer (check your
   repo's ruleset settings — not verified from here).
@@ -119,9 +124,9 @@ before it succeeded. Replace `<...>` placeholders.
 $R="C:\SATHYA\CHAINAIM3003\mcp-servers\FINAGENTS\FINAGENTS1\Transcript_agent\CHAINAIM-TEAM-RESEARCH"
 ```
 
-**Start a PR branch (fresh from latest main, then confirm):**
+**Sync `dev` with `main` (start of every PR, after the previous merge):**
 ```powershell
-cd $R; git checkout main; if ($?) { git pull origin main; if ($?) { git checkout -b <branch>; if ($?) { git branch --show-current } } }
+cd $R; git checkout dev; if ($?) { git pull origin main; if ($?) { git push origin dev; git branch --show-current } }
 ```
 
 **Check branch + what will be committed (run before every commit):**
@@ -132,14 +137,14 @@ cd $R; git branch --show-current; git status --short
 **Commit + push + open PR** (explicit paths — never `git add -A`, so outputs/.env can't slip in;
 PR bodies live in the git-ignored `.pr/` folder):
 ```powershell
-cd $R; git add -- <paths...>; if ($?) { git commit -m "<subject>" -m "<body>"; if ($?) { git push -u origin <branch>; if ($?) { gh pr create --base main --head <branch> --title "<title>" --body-file .pr/<PR-ID>.md } } }
+cd $R; git add -- <paths...>; if ($?) { git commit -m "<subject>" -m "<body>"; if ($?) { git push origin dev; if ($?) { gh pr create --base main --head dev --title "<title>" --body-file .pr/<PR-ID>.md; if ($?) { gh pr merge --auto --merge } } } }
 ```
 
 **After the PR is merged — tag the latest main:**
 ```powershell
-cd $R; git checkout main; if ($?) { git pull origin main; if ($?) { git tag -a <vX.Y.Z> -m "<PR-ID>: <title>"; if ($?) { git push origin <vX.Y.Z>; if ($?) { git branch -D <branch>; git branch --show-current } } } }
+cd $R; git checkout main; if ($?) { git pull origin main; if ($?) { git tag -a <vX.Y.Z> -m "<PR-ID>: <title>"; if ($?) { git push origin <vX.Y.Z>; if ($?) { git checkout dev; if ($?) { git pull origin main; if ($?) { git push origin dev; git branch --show-current } } } } } }
 ```
-(`-D` because a squash-merged branch is not seen as merged by git; GitHub already deleted the remote branch.)
+(Tags `main`, then brings the merge commit back into `dev` so the next PR shows only new work.)
 
 **Release note for phase tags (v2.0.0 / v3.0.0 / v4.0.0):**
 ```powershell
@@ -278,7 +283,7 @@ Expect: 15 planned renames; after apply `kb/full` shows titles; undo dry-run lis
 
 ---
 
-### PR-4 · `fix/provider-hardening` · tag `v1.2.1`
+### PR-4 · branch `dev` · tag `v1.2.1`
 **What:** make `SubscriptionProvider` safe for real transcripts on Windows.
 - Prompt sent via **stdin**, not argv (Windows command lines cap at 32,767 chars; your largest
   transcript is ~100 KB).

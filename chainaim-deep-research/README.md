@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "28/28 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "34/34 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -111,7 +111,7 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `provider` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
@@ -158,6 +158,25 @@ uv run scripts/rename_kb.py --undo ../GENERAL-RESEARCH/output/rename_log_<ts>.js
 | `--throttle-s SEC` | `2.0` | pause between oEmbed lookups |
 | `--no-lookup` | off | never call oEmbed; rename only entries whose title is already in the manifest |
 | `--backup-dir PATH` | `<kb_dir>/kb_backup_<ts>` | manifest backup folder |
+
+## Model provider (PR-4)
+Summaries (PR-5) call Claude through `scripts/provider.py`. On the subscription path it runs
+`claude -p --output-format json --model <alias>`:
+- the prompt is sent on **stdin** (long transcripts exceed Windows' 32,767-char command line),
+- it runs in an empty temp folder, so this repo's `CLAUDE.md`/hooks are not loaded into every call,
+- models are **aliases** (`haiku`/`sonnet`/`opus`, config `model.tier_models`), so no dated ID goes stale,
+- `is_error`, a non-zero exit or non-JSON output raise an error — never a silent empty result,
+- `complete_json()` uses `--json-schema` and returns `structured_output` (used by the checker).
+
+Live check (one small call on your Max plan; writes nothing):
+```bash
+uv run scripts/provider_smoke.py                 # haiku: expect result 'OK' + token usage + "smoke: PASS"
+uv run scripts/provider_smoke.py --json          # also test structured output
+uv run scripts/provider_smoke.py --big-kb 120    # 120 KB prompt via stdin
+```
+`--provider-check` now also prints where the `claude` CLI was found (`claude_bin`).
+Config: `model.tier_models`, `model.api_tier_models` (full IDs, API path only), `model.claude_bin`,
+`model.timeout_s`, `model.claude_workdir`.
 
 ## Manifest `source_url` fix (PR-1, one-time)
 Runs before PR-1 stored the whole input line as `source_url` (e.g. a pasted table row
