@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "23/23 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "28/28 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -111,7 +111,7 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
@@ -130,7 +130,34 @@ New extractions are named `<Title> [<id>]`, e.g. `kb/full/Design Claude Code Lik
 - The manifest records `title` and `stem` for each new entry.
 - Settings: `output.naming` (`title_id` | `id`), `output.max_stem_len`,
   `youtube.title_lookup.{timeout_s, retries, backoff_s}`; per run: `--naming`.
-- Files extracted before PR-2 keep their `<id>` names until the PR-3 rename script.
+- Files extracted before PR-2 are renamed with `scripts/rename_kb.py` (below).
+
+## Renaming existing files (PR-3, reversible)
+```bash
+uv run scripts/rename_kb.py                 # DRY RUN (default): show "<id>.txt -> <Title> [<id>].txt"
+uv run scripts/rename_kb.py --apply         # back up manifest + write rename log, then rename
+uv run scripts/rename_kb.py                 # re-run: expect "nothing to rename."
+uv run scripts/rename_kb.py --undo ../GENERAL-RESEARCH/output/rename_log_<ts>.json --apply   # undo
+```
+- Same naming rule as new extractions (`safe_stem`), so old and new files match.
+- Titles come from the manifest if known, otherwise YouTube oEmbed (paced by `--throttle-s`).
+  A video whose title can't be fetched (private/removed → HTTP 401/404) keeps its `<id>` name.
+- Never overwrites a file; if any rename fails, the ones already done in that run are reversed
+  and the manifest is left unchanged. File contents are never changed.
+- `--apply` writes `<kb_dir>/rename_log_<ts>.json` (used by `--undo`, kept as an audit record)
+  and backs up the manifest to `<kb_dir>/kb_backup_<ts>/` (git-ignored).
+
+### Flags (rename_kb.py)
+| Flag | Default | Effect |
+|------|---------|--------|
+| `--config PATH` | `config.yaml` | config file |
+| `--kb-dir PATH` | from config | override `output.kb_dir` |
+| `--dry-run` | on | show the plan only |
+| `--apply` | off | perform the renames (or the undo) |
+| `--undo LOG` | — | reverse the renames recorded in a rename log |
+| `--throttle-s SEC` | `2.0` | pause between oEmbed lookups |
+| `--no-lookup` | off | never call oEmbed; rename only entries whose title is already in the manifest |
+| `--backup-dir PATH` | `<kb_dir>/kb_backup_<ts>` | manifest backup folder |
 
 ## Manifest `source_url` fix (PR-1, one-time)
 Runs before PR-1 stored the whole input line as `source_url` (e.g. a pasted table row
