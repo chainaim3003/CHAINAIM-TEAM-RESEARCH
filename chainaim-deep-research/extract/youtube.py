@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # import sibling module from scripts/ (orchestrate puts scripts/ on sys.path)
 from throttle import Throttle  # type: ignore
@@ -42,8 +42,12 @@ def write_full(
     full_dir: Path,
     formats: List[str],
     kb_dir: Path,
+    stem: Optional[str] = None,
 ) -> Dict[str, str]:
-    """Write extracted transcript to kb/full/<key>.<fmt> for each requested format.
+    """Write extracted transcript to kb/full/<stem>.<fmt> for each requested format.
+
+    `stem` is the file name without extension (PR-2: "<Title> [<key>]", built by
+    scripts/naming.safe_stem). When None, the pre-PR-2 name "<key>" is used.
 
     Returns a {fmt: path} map for the manifest. Each path is stored RELATIVE to kb_dir
     (POSIX-style, e.g. "kb/full/<key>.txt") so the manifest is portable across machines
@@ -55,9 +59,10 @@ def write_full(
     transcript text itself is never modified (the skill's CRITICAL rule), only wrapped.
     """
     full_dir.mkdir(parents=True, exist_ok=True)
+    name = stem or key
     paths: Dict[str, str] = {}
     for fmt in formats:
-        target = full_dir / f"{key}.{fmt}"
+        target = full_dir / f"{name}.{fmt}"
         if fmt == "txt":
             target.write_text(text, encoding="utf-8")
         elif fmt == "md":
@@ -83,8 +88,11 @@ def extract(
     formats: List[str],
     throttle: Throttle,
     timestamps: bool = False,
+    stem: Optional[str] = None,
 ) -> Tuple[bool, Dict[str, str], str]:
     """Extract one video. Returns (ok, paths, info).
+
+    `stem` (optional) sets the output file name without extension; see write_full().
 
     ok=False -> info is the skill's stderr / error text; paths is empty.
     ok=True  -> paths is {fmt: file} (relative to kb_dir, see write_full), info is the
@@ -97,5 +105,5 @@ def extract(
     text = output.rstrip("\n")
     if not text.strip():
         return False, {}, "empty transcript (video may lack captions)"
-    paths = write_full(key=key, text=text, full_dir=full_dir, formats=formats, kb_dir=kb_dir)
+    paths = write_full(key=key, text=text, full_dir=full_dir, formats=formats, kb_dir=kb_dir, stem=stem)
     return True, paths, content_hash(text)

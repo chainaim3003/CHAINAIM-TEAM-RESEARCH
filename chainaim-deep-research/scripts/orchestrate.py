@@ -17,6 +17,7 @@ CLI flags (Rule 8 — all behavior configurable, defaults sensible):
     --config PATH            config file (default: ../config.yaml next to scripts/)
     --dry-run               plan only: classify + dedupe, NO extraction, NO writes
     --max-videos N          cap sources processed this run (default: all)
+    --naming title_id|id    file names '<Title> [<id>]' (default) or '<id>' (no title lookup)
     --timestamps            include timestamps in transcripts (overrides config)
     --no-timestamps         exclude timestamps (overrides config)
     --force                 ignore dedupe gate; re-extract even if already seen
@@ -48,6 +49,8 @@ from cost_ledger import CostLedger                # noqa: E402
 import provider as provider_mod                   # noqa: E402
 from ingest.local_dir import collect_sources      # noqa: E402
 from extract import youtube as yt                 # noqa: E402
+from extract.metadata import fetch_youtube_title  # noqa: E402
+from naming import DEFAULT_MAX_LEN, safe_stem     # noqa: E402
 
 
 # ----- Router / classify (contract s4: classify(line) -> (kind, key)) -----
@@ -153,6 +156,14 @@ def run(args: argparse.Namespace) -> int:
         timestamps = bool(yt_cfg.get("timestamps", False))
     formats = cfg.get("output", {}).get("formats", ["txt"])
 
+    # PR-2 naming: "title_id" -> "<Title> [<key>]" (title via oEmbed), "id" -> "<key>" (pre-PR-2).
+    # CLI --naming wins over config output.naming.
+    naming = args.naming or cfg.get("output", {}).get("naming", "title_id")
+    if naming not in ("title_id", "id"):
+        sys.exit(f"invalid output.naming '{naming}' (expected 'title_id' or 'id')")
+    max_stem_len = int(cfg.get("output", {}).get("max_stem_len", DEFAULT_MAX_LEN))
+    tl_cfg = yt_cfg.get("title_lookup", {})
+
     # ingest — CLI flags override config (config supplies the defaults)
     items = collect_sources(
         source_list=args.source_list if args.source_list is not None else cfg.get("input", {}).get("source_list"),
@@ -186,7 +197,7 @@ def run(args: argparse.Namespace) -> int:
             break
 
     print(f"== ChainAIM V1 ==  ingest={len(items)}  youtube_new={len(planned)}  "
-          f"dedupe_skipped={skipped_dedupe}  unknown_skipped={len(skipped_unknown)}")
+          f"dedupe_skipped={skipped_dedupe}  unknown_skipped={len(skipped_unknown)}  naming={naming}")
     if skipped_unknown:
         print("  unknown (not YouTube; V1 skips — future versions route these):")
         for u in skipped_unknown[:10]:
@@ -196,10 +207,24 @@ def run(args: argparse.Namespace) -> int:
         print("\n-- DRY RUN: would extract --")
         for p in planned:
             print(f"    {p['key']}  <-  {p['line']}")
+        if naming == "title_id":
+            print("(titles are looked up at extract time, not in a dry run)")
         print("(no files written, no manifest/ledger changes)")
         return 0
 
     for p in planned:
+        # Title lookup (PR-2). Failure never invents a title: fall back to the key-only name.
+        title: Optional[str] = None
+        if naming == "title_id":
+            title, why = fetch_youtube_title(
+                p["key"],
+                timeout_s=float(tl_cfg.get("timeout_s", 10.0)),
+                retries=int(tl_cfg.get("retries", 2)),
+                backoff_s=float(tl_cfg.get("backoff_s", 1.0)),
+            )
+            if title is None:
+                print(f"  [warn] {p['key']}: title unavailable ({why}); file named by ID")
+        stem = safe_stem(title, p["key"], max_len=max_stem_len) if title else None
         ok, file_paths, info = yt.extract(
             key=p["key"],
             source=p["url"],
@@ -209,11 +234,12 @@ def run(args: argparse.Namespace) -> int:
             formats=formats,
             throttle=throttle,
             timestamps=timestamps,
+            stem=stem,
         )
         ledger.add(free_tool_calls=1)
         if ok:
             manifest.record(p["key"], p["url"], info, file_paths, status="extracted",
-                            source_line=p["line"])
+                            source_line=p["line"], title=title, stem=stem)
             ledger.add(items_processed=1)
             extracted += 1
             print(f"  [ok] {p['key']} -> {file_paths.get('txt', next(iter(file_paths.values()), '?'))}")
@@ -246,6 +272,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--force", action="store_true", help="ignore dedupe gate; re-extract seen keys")
     p.add_argument("--provider-check", action="store_true", help="print provider guardrail report and exit")
     p.add_argument("--kb-dir", default=None, help="override output.kb_dir")
+    p.add_argument("--naming", choices=["title_id", "id"], default=None,
+                   help="file naming: 'title_id' = '<Title> [<id>]' (title via oEmbed), "
+                        "'id' = '<id>' (no title lookup). Default: output.naming in config")
     p.add_argument("--source-list", default=None,
                    help="override input.source_list (path to a newline-delimited source file)")
     p.add_argument("--source-dir", default=None,

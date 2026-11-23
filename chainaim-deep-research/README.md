@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "17/17 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "23/23 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -105,18 +105,32 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | `--kb-dir PATH` | from config | override `output.kb_dir` |
 | `--source-list PATH` | from config | override `input.source_list` |
 | `--source-dir PATH` | from config | override `input.source_dir` |
+| `--naming title_id\|id` | `output.naming` (`title_id`) | `title_id`: files named `<Title> [<id>]` (title via YouTube oEmbed); `id`: `<id>` with no title lookup |
 
 ### Flags (run_evals.py)
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
 > temporary data and use an OFFLINE test double (`evals/fixtures/fake_transcript.py`), so they
 > do NOT read `sources.txt` / `input.source_dir` and make ZERO YouTube calls. Only `--fixtures`
 > configures their input.
+
+## File naming (PR-2)
+New extractions are named `<Title> [<id>]`, e.g. `kb/full/Design Claude Code Like a Senior Engineer [YtRIj_KU9d4].txt`.
+- The title comes from YouTube's public oEmbed endpoint (free, no API key, one request per video).
+- Characters Windows forbids (`< > : " / \ | ? *`) are removed, the name is capped at
+  `output.max_stem_len` (default 100) so full paths stay under Windows' 260-character limit,
+  and ` [<id>]` is always kept so names never collide.
+- If the title lookup fails (offline, private/removed video) the file is named `<id>` and the run
+  prints `[warn] <id>: title unavailable (...)`. A title is never invented.
+- The manifest records `title` and `stem` for each new entry.
+- Settings: `output.naming` (`title_id` | `id`), `output.max_stem_len`,
+  `youtube.title_lookup.{timeout_s, retries, backoff_s}`; per run: `--naming`.
+- Files extracted before PR-2 keep their `<id>` names until the PR-3 rename script.
 
 ## Manifest `source_url` fix (PR-1, one-time)
 Runs before PR-1 stored the whole input line as `source_url` (e.g. a pasted table row
@@ -149,7 +163,7 @@ For each new `kb/full/<key>.txt`, open a Claude Code session on Max and follow
 
 ## Output layout (under `output.kb_dir`)
 ```
-kb/full/<key>.txt          # extracted transcript (raw; never edited by synthesis)
+kb/full/<Title> [<key>].txt  # extracted transcript (raw; never edited by synthesis); <key>.txt if no title
 kb/highlights/<key>.md     # synthesized entry (manual in V1)
 manifest.json              # dedupe ledger (idempotent re-runs); source_url + source_line per entry
 cost_ledger.jsonl          # one line per run (items, free tool calls, tokens)

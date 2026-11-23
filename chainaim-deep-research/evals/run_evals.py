@@ -10,7 +10,7 @@ separate suites keyed off model.provider; they are intentionally NOT run in V1.
 Flags (Rule 8):
     --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
     --verbose        print each case, not just the summary
-    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest)
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming)
 
 Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
 """
@@ -37,6 +37,8 @@ from manifest import Manifest                # noqa: E402
 from throttle import Throttle                # noqa: E402
 from ingest.local_dir import collect_sources  # noqa: E402
 from extract import youtube as yt            # noqa: E402
+from extract.metadata import HttpStatusError, fetch_youtube_title, oembed_url  # noqa: E402
+from naming import safe_stem                 # noqa: E402
 
 Result = Tuple[int, int, List[str]]  # (passed, total, failures)
 
@@ -234,12 +236,120 @@ def suite_manifest(fixtures: Path, verbose: bool) -> Result:
     return passed, 4, fails
 
 
+def suite_naming(fixtures: Path, verbose: bool) -> Result:
+    """PR-2: "<Title> [<key>]" file names and the oEmbed title lookup.
+
+    Offline: the title lookup uses an injected fake http_get (labelled test double) — no
+    network. 6 checks:
+      1. forbidden Windows characters removed, spaces collapsed, key suffix added.
+      2. missing / empty / all-invalid title -> key-only stem (pre-PR-2 name).
+      3. long title cut to max_len, never ending in a space or dot before " [key]".
+      4. unicode/emoji kept (NFC), control chars removed, trailing dots stripped.
+      5. title lookup: success -> title; HTTP 404 -> None with NO retry; network error ->
+         None after 1 + retries attempts; oembed_url is well-formed.
+      6. extract() writes kb/full/<stem>.txt and the manifest path points to it.
+    """
+    fails: List[str] = []
+    passed = 0
+    key = "8D8ewFBJfFM"
+
+    def check(n: int, cond_msgs: List[str]) -> None:
+        nonlocal passed
+        if cond_msgs:
+            fails.extend(f"naming {n}: {m}" for m in cond_msgs)
+        else:
+            passed += 1
+
+    # 1
+    got = safe_stem('Agents: How/Why <Now>?  "Really" | 2026*', key)
+    check(1, [] if got == f"Agents How Why Now Really 2026 [{key}]" else [f"got {got!r}"])
+    # 2
+    c2 = [f"{t!r} -> {safe_stem(t, key)!r}" for t in (None, "", "   ", '<>:"/\\|?*', "...")
+          if safe_stem(t, key) != key]
+    check(2, c2)
+    # 3
+    long_t = ("Word " * 80) + "end."
+    st = safe_stem(long_t, key, max_len=60)
+    c3 = []
+    if len(st) > 60:
+        c3.append(f"len {len(st)} > 60")
+    if not st.endswith(f" [{key}]"):
+        c3.append(f"missing key suffix: {st!r}")
+    if st[: -len(f" [{key}]")].endswith((" ", ".")):
+        c3.append(f"title part ends with space/dot: {st!r}")
+    try:
+        safe_stem("x", key, max_len=5)
+        c3.append("max_len too small did not raise")
+    except ValueError:
+        pass
+    check(3, c3)
+    # 4
+    st4 = safe_stem("Cafe\u0301 \U0001F680 launch\x07 notes...", key)
+    check(4, [] if st4 == f"Caf\u00e9 \U0001F680 launch notes [{key}]" else [f"got {st4!r}"])
+
+    # 5 — fake http_get (test double)
+    c5 = []
+    calls = {"n": 0}
+
+    def ok_get(url: str, timeout: float) -> bytes:
+        return b'{"title": "  Building Multi-Agent Systems  ", "author_name": "x"}'
+
+    def nf_get(url: str, timeout: float) -> bytes:
+        calls["n"] += 1
+        raise HttpStatusError(404, "Not Found")
+
+    def net_get(url: str, timeout: float) -> bytes:
+        calls["n"] += 1
+        raise OSError("connection reset")
+
+    noop = lambda _s: None  # noqa: E731
+    t, why = fetch_youtube_title(key, http_get=ok_get, sleep=noop)
+    if t != "Building Multi-Agent Systems" or why is not None:
+        c5.append(f"success -> {(t, why)}")
+    calls["n"] = 0
+    t, why = fetch_youtube_title(key, retries=3, http_get=nf_get, sleep=noop)
+    if t is not None or calls["n"] != 1:
+        c5.append(f"404 -> title={t!r} calls={calls['n']} (expected None, 1 call)")
+    calls["n"] = 0
+    t, why = fetch_youtube_title(key, retries=2, http_get=net_get, sleep=noop)
+    if t is not None or calls["n"] != 3 or "after 3 attempts" not in (why or ""):
+        c5.append(f"network -> title={t!r} calls={calls['n']} why={why!r}")
+    if oembed_url(key) != ("https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com"
+                           f"%2Fwatch%3Fv%3D{key}&format=json"):
+        c5.append(f"oembed_url -> {oembed_url(key)}")
+    check(5, c5)
+
+    # 6 — real extract path with a stem, offline transcript double
+    c6 = []
+    with tempfile.TemporaryDirectory() as tds:
+        td = Path(tds)
+        stem = safe_stem("Building Multi-Agent Systems", "dQw4w9WgXcQ")
+        ok, paths, info = yt.extract(
+            key="dQw4w9WgXcQ", source="https://youtu.be/dQw4w9WgXcQ",
+            transcript_script=str(PKG / "evals" / "fixtures" / "fake_transcript.py"),
+            full_dir=td / "kb" / "full", kb_dir=td, formats=["txt"],
+            throttle=Throttle(min_delay_s=0.0, jitter_s=0.0, max_retries=1), timestamps=False,
+            stem=stem,
+        )
+        expect = td / "kb" / "full" / f"{stem}.txt"
+        if not ok or not expect.exists():
+            c6.append(f"file not written at {expect.name} (ok={ok})")
+        if paths.get("txt") != f"kb/full/{stem}.txt":
+            c6.append(f"manifest path -> {paths.get('txt')!r}")
+    check(6, c6)
+
+    if verbose:
+        print(f"  naming -> {passed}/6 checks ok; example stem: {safe_stem('Agents: How/Why?', key)!r}")
+    return passed, 6, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
     "extract": suite_extract,
     "dedupe": suite_dedupe,
     "manifest": suite_manifest,
+    "naming": suite_naming,
 }
 
 
