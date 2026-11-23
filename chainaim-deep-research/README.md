@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "34/34 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "32/32 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -111,7 +111,7 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `provider` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `pack` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
@@ -159,24 +159,30 @@ uv run scripts/rename_kb.py --undo ../GENERAL-RESEARCH/output/rename_log_<ts>.js
 | `--no-lookup` | off | never call oEmbed; rename only entries whose title is already in the manifest |
 | `--backup-dir PATH` | `<kb_dir>/kb_backup_<ts>` | manifest backup folder |
 
-## Model provider (PR-4)
-Summaries (PR-5) call Claude through `scripts/provider.py`. On the subscription path it runs
-`claude -p --output-format json --model <alias>`:
-- the prompt is sent on **stdin** (long transcripts exceed Windows' 32,767-char command line),
-- it runs in an empty temp folder, so this repo's `CLAUDE.md`/hooks are not loaded into every call,
-- models are **aliases** (`haiku`/`sonnet`/`opus`, config `model.tier_models`), so no dated ID goes stale,
-- `is_error`, a non-zero exit or non-JSON output raise an error — never a silent empty result,
-- `complete_json()` uses `--json-schema` and returns `structured_output` (used by the checker).
-
-Live check (one small call on your Max plan; writes nothing):
+## Summaries with ANY AI, by hand (no AI inside the agent)
+The agent never calls an AI. To summarise, it prepares one ready-to-paste prompt per transcript:
 ```bash
-uv run scripts/provider_smoke.py                 # haiku: expect result 'OK' + token usage + "smoke: PASS"
-uv run scripts/provider_smoke.py --json          # also test structured output
-uv run scripts/provider_smoke.py --big-kb 120    # 120 KB prompt via stdin
+uv run scripts/build_kb_pack.py --dry-run    # show what would be written
+uv run scripts/build_kb_pack.py              # write kb/prompts/<Title> [<id>].prompt.md + kb/INDEX.md
 ```
-`--provider-check` now also prints where the `claude` CLI was found (`claude_bin`).
-Config: `model.tier_models`, `model.api_tier_models` (full IDs, API path only), `model.claude_bin`,
-`model.timeout_s`, `model.claude_workdir`.
+1. Open `kb/INDEX.md` (lists every video, its transcript, its prompt, and whether a summary exists).
+2. Open a **prompt** file, copy ALL of it, paste it into Claude Desktop / Claude Code / Gemini / GPT.
+3. Save the AI's answer as `kb/highlights/<Title> [<id>].md` (the exact name is in the prompt).
+4. Re-run `build_kb_pack.py` — INDEX.md then shows ✅ for that summary.
+
+- The full transcript is copied into the prompt verbatim; nothing is shortened or edited.
+- Re-runs only rewrite a prompt when its transcript changed (`--force` rewrites all).
+- Template: `synth/manual_prompt.md` (edit it to change the instructions). Config:
+  `output.prompts_dir`, `output.prompt_template`.
+
+| Flag (build_kb_pack.py) | Default | Effect |
+|------|---------|--------|
+| `--dry-run` | off | report only, write nothing |
+| `--force` | off | rewrite prompts even if unchanged |
+| `--key KEY` | all | only this video (INDEX.md still lists all) |
+| `--template PATH` | `output.prompt_template` | use another prompt template |
+| `--no-index` | off | don't rebuild `kb/INDEX.md` |
+| `--kb-dir PATH` / `--config PATH` | from config | as in orchestrate.py |
 
 ## Manifest `source_url` fix (PR-1, one-time)
 Runs before PR-1 stored the whole input line as `source_url` (e.g. a pasted table row
@@ -202,7 +208,7 @@ copying it back over `manifest.json`.
 | `--apply` | off | back up, then write the fixed manifest |
 | `--backup-dir PATH` | `<kb_dir>/kb_backup_<ts>` | where the backup is written (never overwrites an existing backup) |
 
-## After extraction (manual synthesis — V1)
+## After extraction (manual synthesis — V1, superseded by build_kb_pack.py above)
 For each new `kb/full/<key>.txt`, open a Claude Code session on Max and follow
 `synth/synthesize.md` to write `kb/highlights/<key>.md`, self-checking against
 `synth/judge.md`. Synthesis never edits `kb/full/`. (Synthesis becomes scripted in V2.)

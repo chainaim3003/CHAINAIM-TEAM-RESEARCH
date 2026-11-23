@@ -10,7 +10,7 @@ separate suites keyed off model.provider; they are intentionally NOT run in V1.
 Flags (Rule 8):
     --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
     --verbose        print each case, not just the summary
-    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|provider)
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|pack)
 
 Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
 """
@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import tempfile
 from pathlib import Path
@@ -40,7 +39,7 @@ from ingest.local_dir import collect_sources  # noqa: E402
 from extract import youtube as yt            # noqa: E402
 from extract.metadata import HttpStatusError, fetch_youtube_title, oembed_url  # noqa: E402
 from naming import safe_stem                 # noqa: E402
-from provider import ProviderError, SubscriptionProvider, select_provider  # noqa: E402
+from build_kb_pack import build_pack          # noqa: E402
 from rename_kb import apply_renames, apply_undo, plan_renames, plan_undo  # noqa: E402
 
 Result = Tuple[int, int, List[str]]  # (passed, total, failures)
@@ -477,124 +476,95 @@ def suite_rename(fixtures: Path, verbose: bool) -> Result:
     return passed, 5, fails
 
 
-def suite_provider(fixtures: Path, verbose: bool) -> Result:
-    """PR-4: SubscriptionProvider against an OFFLINE test double of `claude -p`.
+def suite_pack(fixtures: Path, verbose: bool) -> Result:
+    """Way 1 (manual AI): ready-to-paste prompt per transcript + kb/INDEX.md. No AI, offline.
 
-    evals/fixtures/fake_claude.py mimics the documented `--output-format json` shape; no
-    network, no real model. 6 checks:
-      1. prompt goes via STDIN (not argv), incl. a 120 KB prompt (> Windows' 32,767-char
-         command-line limit); -p and --output-format json are passed.
-      2. result, usage (incl. cache tokens), cost estimate and model ALIAS are parsed/passed.
-      3. is_error, non-zero exit and non-JSON output all raise ProviderError (no silent success).
-      4. complete_json returns structured_output; a reply without it raises ProviderError.
-      5. the CLI runs in a clean scratch folder (not the repo), so repo CLAUDE.md isn't loaded.
-      6. select_provider guardrails: key set + subscription, product + subscription, and
-         api without key all raise; subscription without key returns SubscriptionProvider.
+    4 checks:
+      1. prompt contains the transcript VERBATIM (incl. braces/unicode), title, source URL and
+         the save-as path; uses the real synth/manual_prompt.md template.
+      2. INDEX.md lists every entry, marks a saved summary, uses <...> links for names with spaces.
+      3. idempotent: re-run writes nothing; a changed transcript is rewritten; --force rewrites all.
+      4. an entry whose transcript file is missing is reported, not fatal; dry run writes nothing.
     """
     fails: List[str] = []
     passed = 0
-    fake = [sys.executable, str(PKG / "evals" / "fixtures" / "fake_claude.py")]
-    prov = SubscriptionProvider({"synthesize": "sonnet"}, claude_cmd=fake, timeout_s=60)
+    template = (PKG / "synth" / "manual_prompt.md").read_text(encoding="utf-8")
 
     def check(n: int, msgs: List[str]) -> None:
         nonlocal passed
         if msgs:
-            fails.extend(f"provider {n}: {m}" for m in msgs)
+            fails.extend(f"pack {n}: {m}" for m in msgs)
         else:
             passed += 1
 
-    def with_mode(mode: str, fn):
-        old = os.environ.get("FAKE_CLAUDE_MODE")
-        os.environ["FAKE_CLAUDE_MODE"] = mode
-        try:
-            return fn()
-        finally:
-            if old is None:
-                os.environ.pop("FAKE_CLAUDE_MODE", None)
-            else:
-                os.environ["FAKE_CLAUDE_MODE"] = old
+    with tempfile.TemporaryDirectory() as tds:
+        kb = Path(tds)
+        full = kb / "kb" / "full"
+        full.mkdir(parents=True)
+        s1 = "Design Claude Code [AAAAAAAAAAA]"
+        t1 = "Let's design {an} agent \u2014 caf\u00e9 [music]\n>> next speaker"
+        (full / f"{s1}.txt").write_text(t1, encoding="utf-8")
+        (full / "BBBBBBBBBBB.txt").write_text("plain transcript", encoding="utf-8")
+        (kb / "kb" / "highlights").mkdir(parents=True)
+        (kb / "kb" / "highlights" / "BBBBBBBBBBB.md").write_text("# my summary", encoding="utf-8")
+        data = {
+            "AAAAAAAAAAA": {"source_url": "https://www.youtube.com/watch?v=AAAAAAAAAAA", "status": "extracted",
+                            "full_paths": {"txt": f"kb/full/{s1}.txt"}, "title": "Design: Claude Code", "stem": s1},
+            "BBBBBBBBBBB": {"source_url": "https://www.youtube.com/watch?v=BBBBBBBBBBB", "status": "extracted",
+                            "full_paths": {"txt": "kb/full/BBBBBBBBBBB.txt"}},
+            "CCCCCCCCCCC": {"source_url": "x", "status": "extracted", "full_paths": {"txt": "kb/full/gone.txt"}},
+        }
 
-    # 1 + 2 + 5
-    big = "x" * (120 * 1024)
-    c = with_mode("ok", lambda: prov.complete(big, "synthesize"))
-    info = json.loads(c.text)
-    c1 = []
-    if info["stdin_len"] != len(big) or info["prompt_in_argv"]:
-        c1.append(f"stdin_len={info['stdin_len']} prompt_in_argv={info['prompt_in_argv']}")
-    if not (info["has_p"] and info["fmt_json"]):
-        c1.append("missing -p or --output-format json")
-    check(1, c1)
-    c2 = []
-    if info["model"] != "sonnet" or c.model != "sonnet":
-        c2.append(f"model={info['model']!r} (role synthesize should resolve to alias 'sonnet')")
-    if c.usage != {"input": 120, "output": 30, "cache_read": 5, "cache_write": 7} or c.total_tokens != 162:
-        c2.append(f"usage={c.usage}")
-    if c.cost_usd != 0.0123:
-        c2.append(f"cost={c.cost_usd}")
-    check(2, c2)
+        # 4 (dry run first: must write nothing)
+        c4 = []
+        r0 = build_pack(data, kb_dir=kb, template=template, dry_run=True)
+        if (kb / "kb" / "prompts").exists() or (kb / "kb" / "INDEX.md").exists():
+            c4.append("dry run wrote files")
+        if r0["missing"] != ["CCCCCCCCCCC"]:
+            c4.append(f"missing={r0['missing']}")
 
-    # 3
-    c3 = []
-    for mode in ("is_error", "exit1", "badjson"):
-        try:
-            with_mode(mode, lambda: prov.complete("hi", "haiku"))
-            c3.append(f"{mode}: no ProviderError")
-        except ProviderError:
-            pass
-    check(3, c3)
-
-    # 4
-    c4 = []
-    schema = {"type": "object", "properties": {"pass": {"type": "boolean"}}, "required": ["pass"]}
-    out = with_mode("ok", lambda: prov.complete_json("judge", schema, "sonnet"))
-    if out != {"pass": True, "echo_required": ["pass"]}:
-        c4.append(f"structured_output={out}")
-    try:
-        with_mode("noschema", lambda: prov.complete_json("judge", schema, "sonnet"))
-        c4.append("missing structured_output did not raise")
-    except ProviderError:
-        pass
-    check(4, c4)
-
-    # 5
-    cwd = Path(info["cwd"]).resolve()
-    c5 = []
-    if cwd == PKG.resolve() or PKG.resolve() in cwd.parents or cwd in PKG.resolve().parents:
-        c5.append(f"CLI ran inside the repo: {cwd}")
-    if (cwd / "CLAUDE.md").exists():
-        c5.append("scratch folder contains a CLAUDE.md")
-    check(5, c5)
-
-    # 6
-    c6 = []
-    saved = os.environ.pop("ANTHROPIC_API_KEY", None)
-    try:
-        if not isinstance(select_provider({"model": {"provider": "subscription"}}), SubscriptionProvider):
-            c6.append("subscription without key did not return SubscriptionProvider")
-        for cfg, label in (
-            ({"model": {"provider": "subscription", "deployment": "product"}}, "product+subscription"),
-            ({"model": {"provider": "api"}}, "api without key"),
-        ):
-            try:
-                select_provider(cfg)
-                c6.append(f"{label}: no ProviderError")
-            except ProviderError:
-                pass
-        os.environ["ANTHROPIC_API_KEY"] = "test-not-a-real-key"
-        try:
-            select_provider({"model": {"provider": "subscription"}})
-            c6.append("key set + subscription: no ProviderError")
-        except ProviderError:
-            pass
-    finally:
-        os.environ.pop("ANTHROPIC_API_KEY", None)
-        if saved is not None:
-            os.environ["ANTHROPIC_API_KEY"] = saved
-    check(6, c6)
+        r1 = build_pack(data, kb_dir=kb, template=template)
+        # 1
+        c1 = []
+        pf = kb / "kb" / "prompts" / f"{s1}.prompt.md"
+        txt = pf.read_text(encoding="utf-8") if pf.exists() else ""
+        for needle in (t1, "Design: Claude Code", "https://www.youtube.com/watch?v=AAAAAAAAAAA",
+                       f"kb/highlights/{s1}.md", "--- TRANSCRIPT START ---"):
+            if needle not in txt:
+                c1.append(f"prompt missing {needle[:40]!r}")
+        if "{{" in txt.split("--- TRANSCRIPT START ---")[0]:
+            c1.append("unfilled placeholder in prompt header")
+        check(1, c1)
+        # 2
+        c2 = []
+        idx = (kb / "kb" / "INDEX.md").read_text(encoding="utf-8")
+        if "2 transcripts \u00b7 1 summaries saved." not in idx:
+            c2.append("counts line wrong")
+        if f"[prompt](<prompts/{s1}.prompt.md>)" not in idx or "[\u2705 summary](<highlights/BBBBBBBBBBB.md>)" not in idx:
+            c2.append("links wrong")
+        if "Design: Claude Code" not in idx:
+            c2.append("title missing")
+        check(2, c2)
+        # 3
+        c3 = []
+        r2 = build_pack(data, kb_dir=kb, template=template)
+        if r2["written"]:
+            c3.append(f"re-run wrote {r2['written']}")
+        (full / "BBBBBBBBBBB.txt").write_text("plain transcript v2", encoding="utf-8")
+        r3 = build_pack(data, kb_dir=kb, template=template)
+        if r3["written"] != ["BBBBBBBBBBB"]:
+            c3.append(f"changed transcript -> written={r3['written']}")
+        r4 = build_pack(data, kb_dir=kb, template=template, force=True)
+        if sorted(r4["written"]) != ["AAAAAAAAAAA", "BBBBBBBBBBB"]:
+            c3.append(f"--force -> written={r4['written']}")
+        check(3, c3)
+        if r1["missing"] != ["CCCCCCCCCCC"]:
+            c4.append("missing entry not reported on write run")
+        check(4, c4)
 
     if verbose:
-        print(f"  provider -> {passed}/6 checks ok (stdin {info['stdin_len']} chars, cwd {cwd})")
-    return passed, 6, fails
+        print(f"  pack -> {passed}/4 checks ok")
+    return passed, 4, fails
 
 
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
@@ -605,7 +575,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "manifest": suite_manifest,
     "naming": suite_naming,
     "rename": suite_rename,
-    "provider": suite_provider,
+    "pack": suite_pack,
 }
 
 

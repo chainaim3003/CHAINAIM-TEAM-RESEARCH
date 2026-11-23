@@ -1,0 +1,281 @@
+<!-- transcript_hash: sha256-f612e2d0f3b0cd1a -->
+# Summarise this video transcript
+
+You are given the FULL transcript of a YouTube video. The transcript comes from YouTube's own
+captions, so it may contain caption mistakes, filler words ("you know", repeated words),
+`[music]` tags and `>>` speaker-change markers.
+
+**Video:** 10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill
+**Source:** https://www.youtube.com/watch?v=RegzpFdW8pM
+
+## Write, in Markdown, in this order
+1. **TL;DR** — at most 3 sentences: the single most useful takeaway.
+2. **Key points** — bullets; each one must be supported by the transcript.
+3. **Names & terms** — tools, products, people, numbers mentioned. If a caption error is
+   obvious and you are certain (e.g. "cloud code" -> "Claude Code"), correct it and list the
+   correction here.
+4. **Unclear parts** — anything ambiguous or garbled in the transcript.
+
+## Rules
+- Use ONLY the transcript below. Do not add facts it does not contain.
+- If something is unclear, say so instead of guessing.
+- Keep it short and skimmable.
+
+Save your answer as: `kb/highlights/10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill [RegzpFdW8pM].md`
+
+--- TRANSCRIPT START ---
+Right now, there's a folder on GitHub
+that does the exact job you're paying a
+monthly bill for.
+Maybe six of them.
+A Bloomberg terminal
+that runs on your laptop.
+The ad agency audit you pay thousands
+for.
+The creative studio subscriptions.
+Somebody already built the free
+open-source version.
+And most people will never hear about
+it.
+So, I went and pulled 10 of them.
+10 repositories so good they genuinely
+shouldn't be free.
+And for each one, I'm going to show you
+the exact paid product it replaces.
+Let's go.
+Number one, Auto Hedge.
+This is an autonomous hedge fund in
+Python that you install with one line.
+Under the hood, it's four AI agents
+working as a team.
+A director writes the investment thesis.
+A quant runs the analysis to check it. A
+risk manager decides how big the
+position should be.
+And an execution agent actually places
+the order.
+It operates live on Solana.
+The thing a trading firm pays a desk of
+people to do, generate the idea,
+size it,
+pull the trigger,
+pip install Auto Hedge,
+and it's running.
+Now, obviously, real money, real risk.
+This is not advice.
+But the architecture,
+it's all right there for free.
+Number two, Vibe Trading.
+If Auto Hedge is one fund, this is the
+whole trading floor.
+It runs on a directed graph.
+Agents that hand work to each other in
+order.
+And it ships with 77 specialized finance
+skills and 29 ready-made teams of
+specialist agents.
+Ichimoku, Elliott Wave,
+smart money concepts,
+risk parity,
+the analysis methods a professional desk
+uses.
+It's crypto desk
+pulls live liquidation heat maps.
+And the best part,
+you can watch the agents debate the
+trade in real time.
+One arguing the bull case,
+one
+arguing the bear
+before they ever agree.
+A terminal seat plus an analyst open
+source.
+Number three,
+Fincept terminal.
+And this is the one that made me stop
+scrolling.
+It's a Bloomberg terminal replacement
+that runs on your laptop.
+Bloomberg charges around $27,000 a year
+for a seat.
+Fincept is zero.
+It comes with CFA level analytics,
+over 100 data connectors, Polygon, the
+World Bank, the IMF,
+and 37 AI investor agents
+modeled on the legends,
+Buffett,
+Munger, Graham,
+Lynch.
+You can run a ticker past Warren
+Buffett's framework
+and a risk model in the same window.
+24,000 stars on GitHub
+and it costs nothing.
+Number four,
+LibreChat.
+Every model chat GPT runs, plus Claude,
+plus Gemini, plus DeepSeek, plus 20 more
+in one self-hosted interface you
+control.
+It has native MCP support.
+So, it plugs into tools the same way
+Claude does.
+Here's the refrain.
+Open AI charges you 20 bucks a month to
+use their wrapper around the model.
+LibreChat is the wrapper, open source,
+and you point it at your own keys.
+You own the data, the history, the whole
+thing.
+Same chat experience.
+None of the subscription and none of the
+lock-in.
+Number five,
+Open Generative AI.
+It was launched as Open Higgs Field,
+so don't get thrown by the rename.
+It's a single self-hosted cinema studio
+that puts over 200 AI models behind one
+interface.
+Flux, Sora, Kling, Veo, GPT-4o,
+all in one place.
+Text to image, image to video, a cinema
+mode with real camera controls.
+Now, the honest part, because it
+matters. This is the control panel, not
+the GPUs.
+The big proprietary models run in the
+cloud.
+So, you bring your own API keys.
+What it kills
+is the chaos.
+Six separate creative subscriptions and
+six separate tabs
+collapsed into one open dashboard you
+own.
+Number six,
+Open LLM V-Tuber.
+This one's just delightful.
+It's a live 2D animated AI companion
+that runs fully offline.
+It can see your screen.
+It hears your voice,
+and it shows its inner thoughts as a
+separate text layer.
+So, you literally watch it reason before
+it speaks.
+There's a pet mode that floats it on
+your desktop while you work.
+And you can swap the brain,
+the underlying LLM, by changing one line
+in a config file.
+The character companion apps charge a
+monthly fee
+and keep your conversations on their
+servers.
+This one lives on your machine
+and answers to you.
+Number seven,
+Claude Ads.
+This is a free Claude code skill
+that audits your paid advertising
+the way an expensive agency would.
+It runs over 200 verified checks across
+Google, Meta, YouTube, LinkedIn, TikTok,
+and Microsoft Ads.
+And it does it with six sub-agents
+firing in parallel at the same time.
+Then, it consolidates everything into a
+a ads health score
+With the fixes prioritized by impact.
+An agency charges you anywhere from a
+couple grand to 10,000 for this exact
+audit.
+This runs in your terminal on your
+account for nothing.
+Number eight,
+Agentic inbox.
+Cloudflare, the actual company,
+just open-sourced an email client where
+an AI agent reads your inbox and drafts
+your replies for you.
+And the architecture is the point.
+It runs entirely on Cloudflare workers.
+Every mailbox lives in its own isolated
+durable object.
+And it uses Cloudflare's own AI.
+So, your email never leaves your
+account.
+The paid AI inboxes
+route your mail through someone else's
+servers and bill you monthly.
+This one deploys to infrastructure you
+already control.
+And the data stays yours.
+Number nine,
+Camo Fox.
+If you build
+AI agents that browse the web,
+you've hit the wall.
+Bot detection blocks them instantly.
+Camo Fox makes an agent's browser
+invisible.
+It's built on Camo Fox,
+a Firefox fork that spoofs the
+fingerprint, the WebGL,
+the audio and WebRTC signatures
+down at the C++ level.
+So, the browser doesn't look modified
+because it genuinely isn't.
+What Camo Fox adds on top
+is the part agents love.
+It returns the page as an accessibility
+tree instead of raw HTML.
+And that drops your token cost
+by around 90%.
+The commercial stealth scraping services
+that do this charge per request.
+This is yours.
+Number 10,
+Hyperframes.
+Hagen open-sourced a video framework.
+And it solves a very specific pain.
+Tools like Remotion are powerful, but
+you write your videos in React.
+Hyperframes flips that.
+Your agent writes plain HTML and the
+framework renders it to an MP4.
+No React, no JSX, no new format to teach
+the model.
+GSAP, Lottie, and 3.js
+all work inside it and it's
+deterministic. The same HTML always
+produces the exact same file, which is
+what you want for automation.
+If you've ever wanted an AI agent to
+generate real videos on a schedule, this
+is the missing piece
+and it's free.
+10 repositories.
+Each one quietly replacing a product
+you're probably still being charged for.
+These aren't toys, they're real,
+they're maintained, and they're free.
+So, here's the move.
+Don't try to install all 10.
+Pick the one that hits the bill you're
+tired of paying and plug it into your
+workflow this week.
+I've put all 10, the links, what each
+one replaces, and the honest caveats
+into one free guide.
+Comment the word free stack and I'll
+send it straight to you.
+If you build with this stuff, the deep
+dives live here on YouTube, so
+subscribe.
+And the bite-size drops are on Instagram
+at Hyper Automation Labs.
+Now, go cancel something.
+--- TRANSCRIPT END ---

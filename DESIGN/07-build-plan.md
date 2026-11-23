@@ -199,6 +199,19 @@ Manual steps are walked one at a time when we start.
 
 ---
 
+## Decision 2026-11-23 — the agent stays AI-free (Way 1, manual AI)
+The deep research agent is a separate, free, AI-free tool. It produces transcripts with readable
+names, a ready-to-paste prompt per transcript (`kb/prompts/`) and `kb/INDEX.md`. Summaries are
+made by the user, by hand, in any AI (Claude Desktop/Code, Gemini, GPT) and saved to
+`kb/highlights/<stem>.md`.
+- **PR-4 is now "manual AI pack"** (`scripts/build_kb_pack.py`, `synth/manual_prompt.md`).
+  The Claude-provider hardening drafted earlier was dropped before merge.
+- **PR-5 (automatic summaries + checker) is cancelled.** `scripts/provider.py` stays as it was
+  (unused by the pipeline).
+- Phase 2–3 items that need an AI inside the agent (topic profile, discovery scoring, ask your
+  library, deep research) are **on hold** until revisited. AI-free items (GitHub extraction,
+  arXiv/web extraction, scheduling, the local app) remain possible.
+
 ## 4. PHASE 1 — Core: transcript → named files → checked summary (+ GitHub)
 
 ### PR-0 · `chore/build-plan` · tag `v1.0.5`
@@ -283,8 +296,8 @@ Expect: 15 planned renames; after apply `kb/full` shows titles; undo dry-run lis
 
 ---
 
-### PR-4 · branch `dev` · tag `v1.2.1`
-**What:** make `SubscriptionProvider` safe for real transcripts on Windows.
+### PR-4 · branch `dev` · tag `v1.2.1` — SUPERSEDED (see Decision 2026-11-23: now the manual AI pack)
+**Original plan (not merged):** make `SubscriptionProvider` safe for real transcripts on Windows.
 - Prompt sent via **stdin**, not argv (Windows command lines cap at 32,767 chars; your largest
   transcript is ~100 KB).
 - Resolve the binary with `shutil.which("claude")`; clear error if missing.
@@ -307,7 +320,7 @@ Expect: offline suite passes; live smoke prints `OK` and token counts.
 
 ---
 
-### PR-5 · `feat/synthesize-judge` · tag `v1.3.0`
+### PR-5 · `feat/synthesize-judge` · tag `v1.3.0` — CANCELLED (Decision 2026-11-23)
 **What:** automatic summaries + checker → `kb/highlights/<stem>.md`, plus `kb/INDEX.md` for Claude Code.
 - `scripts/synthesize.py` — flags: `--config`, `--max-items`, `--key`, `--level tldr|highlights|deep`
   (default `highlights`), `--force`, `--dry-run`, `--no-judge` (off by default; logged when used),
