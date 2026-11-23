@@ -64,5 +64,20 @@ model:
     synthesize: "sonnet"
     deep: "opus"
     judge: "sonnet"
+  # PR-4: subscription path uses Claude Code model ALIASES (never go stale). Override a tier
+  # with a pinned name if you need one, e.g. sonnet: "claude-sonnet-5-5".
+  tier_models:
+    haiku: "haiku"
+    sonnet: "sonnet"
+    opus: "opus"
+  # API path (provider: api) needs full model IDs. Current IDs per Anthropic's model list as of
+  # 2026-11; check https://docs.claude.com before switching provider to api.
+  api_tier_models:
+    haiku: "claude-haiku-5-5"
+    sonnet: "claude-sonnet-5-5"
+    opus: "claude-opus-5-5"
+  claude_bin: "claude"            # name on PATH or full path to the Claude Code CLI
+  timeout_s: 600                  # per-call timeout for claude -p
+  claude_workdir: null            # null = fresh empty temp folder (repo CLAUDE.md/hooks not loaded)
   api_key_env: "ANTHROPIC_API_KEY"
   oauth_token_env: "CLAUDE_CODE_OAUTH_TOKEN"
