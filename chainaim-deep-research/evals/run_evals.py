@@ -10,7 +10,7 @@ separate suites keyed off model.provider; they are intentionally NOT run in V1.
 Flags (Rule 8):
     --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
     --verbose        print each case, not just the summary
-    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming)
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename)
 
 Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
 """
@@ -39,6 +39,7 @@ from ingest.local_dir import collect_sources  # noqa: E402
 from extract import youtube as yt            # noqa: E402
 from extract.metadata import HttpStatusError, fetch_youtube_title, oembed_url  # noqa: E402
 from naming import safe_stem                 # noqa: E402
+from rename_kb import apply_renames, apply_undo, plan_renames, plan_undo  # noqa: E402
 
 Result = Tuple[int, int, List[str]]  # (passed, total, failures)
 
@@ -343,6 +344,137 @@ def suite_naming(fixtures: Path, verbose: bool) -> Result:
     return passed, 6, fails
 
 
+def suite_rename(fixtures: Path, verbose: bool) -> Result:
+    """PR-3: rename "<id>.txt" -> "<Title> [<id>].txt" with log, idempotency and undo.
+
+    Offline: temp KB, injected fake title lookup (labelled test double), no network. 5 checks:
+      1. plan: renames the entry whose title resolves; skips a failed lookup, a missing file,
+         and an existing target (never overwrites); uses a manifest title without lookup.
+      2. apply: files moved, content unchanged, manifest full_paths/title/stem updated,
+         backup + rename log written.
+      3. idempotent: a second plan finds nothing to rename.
+      4. undo: files back to original names, manifest restored exactly (title/stem removed).
+      5. rollback: a failing rename part-way reverses earlier renames, manifest untouched.
+    """
+    fails: List[str] = []
+    passed = 0
+
+    def check(n: int, msgs: List[str]) -> None:
+        nonlocal passed
+        if msgs:
+            fails.extend(f"rename {n}: {m}" for m in msgs)
+        else:
+            passed += 1
+
+    titles = {"AAAAAAAAAAA": "Agents: Part 1", "BBBBBBBBBBB": None, "CCCCCCCCCCC": "Clash",
+              "DDDDDDDDDDD": "Ghost"}
+    lookups: List[str] = []
+
+    def fake_get_title(key: str):  # test double for fetch_youtube_title
+        lookups.append(key)
+        t = titles.get(key)
+        return (t, None) if t else (None, "HTTP 404")
+
+    with tempfile.TemporaryDirectory() as tds:
+        kb = Path(tds)
+        full = kb / "kb" / "full"
+        full.mkdir(parents=True)
+        for k in ("AAAAAAAAAAA", "BBBBBBBBBBB", "CCCCCCCCCCC", "EEEEEEEEEEE"):
+            (full / f"{k}.txt").write_text(f"transcript {k}", encoding="utf-8")
+        (full / "Clash [CCCCCCCCCCC].txt").write_text("someone else's file", encoding="utf-8")
+
+        def ent(k, **extra):
+            e = {"source_url": f"https://www.youtube.com/watch?v={k}", "content_hash": "h",
+                 "full_paths": {"txt": f"kb/full/{k}.txt"}, "status": "extracted", "ts": "t"}
+            e.update(extra)
+            return e
+        data = {k: ent(k) for k in ("AAAAAAAAAAA", "BBBBBBBBBBB", "CCCCCCCCCCC", "DDDDDDDDDDD")}
+        data["EEEEEEEEEEE"] = ent("EEEEEEEEEEE", title="Known Title")
+        mp = kb / "manifest.json"
+        mp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        original = json.loads(json.dumps(data))
+
+        # 1. plan
+        plan = plan_renames(data, kb, get_title=fake_get_title, max_len=100)
+        keys = sorted(e["key"] for e in plan["entries"])
+        reasons = {x["key"]: x["reason"] for x in plan["skipped"]}
+        c1 = []
+        if keys != ["AAAAAAAAAAA", "EEEEEEEEEEE"]:
+            c1.append(f"to_rename={keys}")
+        if "unavailable" not in reasons.get("BBBBBBBBBBB", ""):
+            c1.append(f"B reason={reasons.get('BBBBBBBBBBB')}")
+        if "already exists" not in reasons.get("CCCCCCCCCCC", ""):
+            c1.append(f"C reason={reasons.get('CCCCCCCCCCC')}")
+        if "missing" not in reasons.get("DDDDDDDDDDD", ""):
+            c1.append(f"D reason={reasons.get('DDDDDDDDDDD')}")
+        if "EEEEEEEEEEE" in lookups:
+            c1.append("looked up a title already in the manifest")
+        check(1, c1)
+
+        # 2. apply
+        c2 = []
+        log_path = kb / "rename_log_test.json"
+        new_data = apply_renames(plan, data, kb_dir=kb, manifest_path=mp, log_path=log_path,
+                                 backup_dir=kb / "kb_backup_test")
+        a_new = full / "Agents Part 1 [AAAAAAAAAAA].txt"
+        if not a_new.exists() or (full / "AAAAAAAAAAA.txt").exists():
+            c2.append("A not moved")
+        elif a_new.read_text(encoding="utf-8") != "transcript AAAAAAAAAAA":
+            c2.append("A content changed")
+        on_disk = json.loads(mp.read_text(encoding="utf-8"))
+        a = on_disk["AAAAAAAAAAA"]
+        if a.get("full_paths") != {"txt": "kb/full/Agents Part 1 [AAAAAAAAAAA].txt"} \
+                or a.get("title") != "Agents: Part 1" or a.get("stem") != "Agents Part 1 [AAAAAAAAAAA]":
+            c2.append(f"manifest A -> {a}")
+        if on_disk["BBBBBBBBBBB"] != original["BBBBBBBBBBB"]:
+            c2.append("skipped entry B was modified")
+        if not log_path.exists() or not (kb / "kb_backup_test" / "manifest.json").exists():
+            c2.append("rename log or backup missing")
+        if (full / "Clash [CCCCCCCCCCC].txt").read_text(encoding="utf-8") != "someone else's file":
+            c2.append("existing target was overwritten")
+        check(2, c2)
+
+        # 3. idempotent
+        again = plan_renames(new_data, kb, get_title=fake_get_title, max_len=100)
+        check(3, [] if not again["entries"] else [f"second plan -> {[e['key'] for e in again['entries']]}"])
+
+        # 4. undo
+        c4 = []
+        log = json.loads(log_path.read_text(encoding="utf-8"))
+        up = plan_undo(log, new_data, kb)
+        restored = apply_undo(up, new_data, kb_dir=kb, manifest_path=mp, backup_dir=kb / "kb_backup_undo")
+        if not (full / "AAAAAAAAAAA.txt").exists() or a_new.exists():
+            c4.append("A not moved back")
+        if restored != original or json.loads(mp.read_text(encoding="utf-8")) != original:
+            c4.append("manifest not restored exactly")
+        if plan_undo(log, restored, kb)["entries"]:
+            c4.append("second undo still finds work")
+        check(4, c4)
+
+        # 5. rollback on failure part-way
+        c5 = []
+        plan2 = plan_renames(original, kb, get_title=fake_get_title, max_len=100)
+        # sabotage: make the 2nd target appear after planning
+        second = plan2["entries"][1]["moves"][0]["new"]
+        (kb / second).write_text("appeared later", encoding="utf-8")
+        before = mp.read_text(encoding="utf-8")
+        try:
+            apply_renames(plan2, original, kb_dir=kb, manifest_path=mp,
+                          log_path=kb / "rename_log_fail.json", backup_dir=kb / "kb_backup_fail")
+            c5.append("apply did not raise on conflict")
+        except FileExistsError:
+            pass
+        if not (full / "AAAAAAAAAAA.txt").exists():
+            c5.append("first rename not rolled back")
+        if mp.read_text(encoding="utf-8") != before:
+            c5.append("manifest changed after failed apply")
+        check(5, c5)
+
+    if verbose:
+        print(f"  rename -> {passed}/5 checks ok")
+    return passed, 5, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
@@ -350,6 +482,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "dedupe": suite_dedupe,
     "manifest": suite_manifest,
     "naming": suite_naming,
+    "rename": suite_rename,
 }
 
 

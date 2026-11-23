@@ -3,41 +3,49 @@
     "source_url": "https://www.youtube.com/watch?v=wEpw20UIfzI",
     "content_hash": "sha256-3bc92fceeb21e49a",
     "full_paths": {
-      "txt": "kb/full/wEpw20UIfzI.txt"
+      "txt": "kb/full/How I Let Claude Cowork Manage My Emails (Step by Step) [wEpw20UIfzI].txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:53:25.332035+00:00",
-    "source_line": "| 96 | 6/22/26 | 10:15 AM | https://www.youtube.com/watch?v=wEpw20UIfzI | co-work |"
+    "source_line": "| 96 | 6/22/26 | 10:15 AM | https://www.youtube.com/watch?v=wEpw20UIfzI | co-work |",
+    "title": "How I Let Claude Cowork Manage My Emails (Step by Step)",
+    "stem": "How I Let Claude Cowork Manage My Emails (Step by Step) [wEpw20UIfzI]"
   },
   "sJPux4buZN0": {
     "source_url": "https://www.youtube.com/watch?v=sJPux4buZN0",
     "content_hash": "sha256-cc33fa81a4466e1c",
     "full_paths": {
-      "txt": "kb/full/sJPux4buZN0.txt"
+      "txt": "kb/full/I Gave Claude Cowork My Worst Inbox (47,693 Emails) [sJPux4buZN0].txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:58:14.912458+00:00",
-    "source_line": "| 97 | 6/22/26 | 10:15 AM | https://www.youtube.com/watch?v=sJPux4buZN0 | co-work email 2 |"
+    "source_line": "| 97 | 6/22/26 | 10:15 AM | https://www.youtube.com/watch?v=sJPux4buZN0 | co-work email 2 |",
+    "title": "I Gave Claude Cowork My Worst Inbox (47,693 Emails)...",
+    "stem": "I Gave Claude Cowork My Worst Inbox (47,693 Emails) [sJPux4buZN0]"
   },
   "YtRIj_KU9d4": {
     "source_url": "https://www.youtube.com/watch?v=YtRIj_KU9d4",
     "content_hash": "sha256-78795892a16189c7",
     "full_paths": {
-      "txt": "kb/full/YtRIj_KU9d4.txt"
+      "txt": "kb/full/Design Claude Code Like a Senior Engineer [YtRIj_KU9d4].txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:58:19.894165+00:00",
-    "source_line": "| 98 | 6/22/26 | 10:18 AM | https://www.youtube.com/watch?v=YtRIj_KU9d4 | VERY IMPORTANT — Agentic Arch & Designer |"
+    "source_line": "| 98 | 6/22/26 | 10:18 AM | https://www.youtube.com/watch?v=YtRIj_KU9d4 | VERY IMPORTANT — Agentic Arch & Designer |",
+    "title": "Design Claude Code Like a Senior Engineer",
+    "stem": "Design Claude Code Like a Senior Engineer [YtRIj_KU9d4]"
   },
   "n35KalqEwJc": {
     "source_url": "https://www.youtube.com/watch?v=n35KalqEwJc",
     "content_hash": "sha256-9b904080810b1677",
     "full_paths": {
-      "txt": "kb/full/n35KalqEwJc.txt"
+      "txt": "kb/full/Git Worktrees Explained — Run Multiple AI Agents in Parallel (Claude Code Tutorial) [n35KalqEwJc].txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T09:58:24.151647+00:00",
-    "source_line": "| 99 | 6/22/26 | 10:21 AM | https://www.youtube.com/watch?v=n35KalqEwJc | git worktree |"
+    "source_line": "| 99 | 6/22/26 | 10:21 AM | https://www.youtube.com/watch?v=n35KalqEwJc | git worktree |",
+    "title": "Git Worktrees Explained — Run Multiple AI Agents in Parallel (Claude Code Tutorial)",
+    "stem": "Git Worktrees Explained — Run Multiple AI Agents in Parallel (Claude Code Tutorial) [n35KalqEwJc]"
   },
   "DhX4L5bpenU": {
     "source_url": "https://www.youtube.com/watch?v=DhX4L5bpenU",
@@ -53,92 +61,112 @@
     "source_url": "https://www.youtube.com/watch?v=RegzpFdW8pM",
     "content_hash": "sha256-f612e2d0f3b0cd1a",
     "full_paths": {
-      "txt": "kb/full/RegzpFdW8pM.txt"
+      "txt": "kb/full/10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill [RegzpFdW8pM].txt"
     },
     "status": "extracted",
     "ts": "2026-06-22T10:00:35.100552+00:00",
-    "source_line": "https://www.youtube.com/watch?v=RegzpFdW8pM -  OPENSOURCE for paid versions."
+    "source_line": "https://www.youtube.com/watch?v=RegzpFdW8pM -  OPENSOURCE for paid versions.",
+    "title": "10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill",
+    "stem": "10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill [RegzpFdW8pM]"
   },
   "mYSRn6PC1mc": {
     "source_url": "https://www.youtube.com/watch?v=mYSRn6PC1mc",
     "content_hash": "sha256-f9f2a7462602d202",
     "full_paths": {
-      "txt": "kb/full/mYSRn6PC1mc.txt"
+      "txt": "kb/full/Full Workshop Build Your Own Deep Research Agents - Louis-François Bouchard, Paul Iusz [mYSRn6PC1mc].txt"
     },
     "status": "extracted",
-    "ts": "2026-06-23T11:09:48.326900+00:00"
+    "ts": "2026-06-23T11:09:48.326900+00:00",
+    "title": "Full Workshop: Build Your Own Deep Research Agents - Louis-François Bouchard, Paul Iusztin, Samridhi",
+    "stem": "Full Workshop Build Your Own Deep Research Agents - Louis-François Bouchard, Paul Iusz [mYSRn6PC1mc]"
   },
   "bSDkbx5rrpM": {
     "source_url": "https://www.youtube.com/watch?v=bSDkbx5rrpM",
     "content_hash": "sha256-7bd68d14e04419f6",
     "full_paths": {
-      "txt": "kb/full/bSDkbx5rrpM.txt"
+      "txt": "kb/full/This Is The First Real Shape Of AGI Fusion Agents [bSDkbx5rrpM].txt"
     },
     "status": "extracted",
-    "ts": "2026-06-23T11:12:26.477907+00:00"
+    "ts": "2026-06-23T11:12:26.477907+00:00",
+    "title": "This Is The First Real Shape Of AGI: Fusion Agents",
+    "stem": "This Is The First Real Shape Of AGI Fusion Agents [bSDkbx5rrpM]"
   },
   "tf6VNGH3tRk": {
     "source_url": "https://www.youtube.com/watch?v=tf6VNGH3tRk",
     "content_hash": "sha256-8977fb806fc88cbe",
     "full_paths": {
-      "txt": "kb/full/tf6VNGH3tRk.txt"
+      "txt": "kb/full/Marc Sloan - Harness engineering beyond code - product & design constraints for agents [tf6VNGH3tRk].txt"
     },
     "status": "extracted",
-    "ts": "2026-06-23T11:12:41.351172+00:00"
+    "ts": "2026-06-23T11:12:41.351172+00:00",
+    "title": "Marc Sloan - Harness engineering beyond code - product & design constraints for agents - AI Native D",
+    "stem": "Marc Sloan - Harness engineering beyond code - product & design constraints for agents [tf6VNGH3tRk]"
   },
   "Z47vatpsGPI": {
     "source_url": "https://www.youtube.com/watch?v=Z47vatpsGPI",
     "content_hash": "sha256-2a822998c5eb32ab",
     "full_paths": {
-      "txt": "kb/full/Z47vatpsGPI.txt"
+      "txt": "kb/full/Fireside Chat with Boris Cherny, Head of Claude Code [Z47vatpsGPI].txt"
     },
     "status": "extracted",
-    "ts": "2026-06-23T11:15:56.197890+00:00"
+    "ts": "2026-06-23T11:15:56.197890+00:00",
+    "title": "Fireside Chat with Boris Cherny, Head of Claude Code",
+    "stem": "Fireside Chat with Boris Cherny, Head of Claude Code [Z47vatpsGPI]"
   },
   "BOOfy3Yshtw": {
     "source_url": "https://www.youtube.com/watch?v=BOOfy3Yshtw",
     "content_hash": "sha256-56828aebcd56f7e1",
     "full_paths": {
-      "txt": "kb/full/BOOfy3Yshtw.txt"
+      "txt": "kb/full/Loop Engineering to Graph Engineering [BOOfy3Yshtw].txt"
     },
     "status": "extracted",
-    "ts": "2026-08-12T17:17:58.852355+00:00"
+    "ts": "2026-08-12T17:17:58.852355+00:00",
+    "title": "Loop Engineering to Graph Engineering",
+    "stem": "Loop Engineering to Graph Engineering [BOOfy3Yshtw]"
   },
   "8G_1-3IO4ZQ": {
     "source_url": "https://www.youtube.com/watch?v=8G_1-3IO4ZQ",
     "content_hash": "sha256-5578cf37d7dc7318",
     "full_paths": {
-      "txt": "kb/full/8G_1-3IO4ZQ.txt"
+      "txt": "kb/full/WTF Is the Context Layer The Missing Infrastructure for Production Agents — Prukalpa S [8G_1-3IO4ZQ].txt"
     },
     "status": "extracted",
-    "ts": "2026-08-12T17:21:58.110519+00:00"
+    "ts": "2026-08-12T17:21:58.110519+00:00",
+    "title": "WTF Is the Context Layer? The Missing Infrastructure for Production Agents — Prukalpa Sankar",
+    "stem": "WTF Is the Context Layer The Missing Infrastructure for Production Agents — Prukalpa S [8G_1-3IO4ZQ]"
   },
   "8D8ewFBJfFM": {
     "source_url": "https://www.youtube.com/watch?v=8D8ewFBJfFM",
     "content_hash": "sha256-fd195ff44e0daceb",
     "full_paths": {
-      "txt": "kb/full/8D8ewFBJfFM.txt"
+      "txt": "kb/full/Matt Pocock's Claude Code Skills Beat Superpowers Now [8D8ewFBJfFM].txt"
     },
     "status": "extracted",
     "ts": "2026-08-18T08:46:09.004002+00:00",
-    "source_line": "https://youtu.be/8D8ewFBJfFM?si=tQFlhNskLeShupu6"
+    "source_line": "https://youtu.be/8D8ewFBJfFM?si=tQFlhNskLeShupu6",
+    "title": "Matt Pocock's Claude Code Skills Beat Superpowers Now",
+    "stem": "Matt Pocock's Claude Code Skills Beat Superpowers Now [8D8ewFBJfFM]"
   },
   "Kh9mqTzjuEQ": {
     "source_url": "https://www.youtube.com/watch?v=Kh9mqTzjuEQ",
     "content_hash": "sha256-597585fe9a0ee484",
     "full_paths": {
-      "txt": "kb/full/Kh9mqTzjuEQ.txt"
+      "txt": "kb/full/Build A Reasoning Model From Scratch 1 Motivation & Code Setup [Kh9mqTzjuEQ].txt"
     },
     "status": "extracted",
-    "ts": "2026-09-02T12:49:53.324351+00:00"
+    "ts": "2026-09-02T12:49:53.324351+00:00",
+    "title": "Build A Reasoning Model From Scratch 1: Motivation & Code Setup",
+    "stem": "Build A Reasoning Model From Scratch 1 Motivation & Code Setup [Kh9mqTzjuEQ]"
   },
   "E61gUCKcx2s": {
     "source_url": "https://www.youtube.com/watch?v=E61gUCKcx2s",
     "content_hash": "sha256-75acdb546a3e1602",
     "full_paths": {
-      "txt": "kb/full/E61gUCKcx2s.txt"
+      "txt": "kb/full/How Bitcoin Survives Quantum Computers (ft. Dan Boneh) [E61gUCKcx2s].txt"
     },
     "status": "extracted",
-    "ts": "2026-09-02T13:03:32.869812+00:00"
+    "ts": "2026-09-02T13:03:32.869812+00:00",
+    "title": "How Bitcoin Survives Quantum Computers (ft. Dan Boneh)",
+    "stem": "How Bitcoin Survives Quantum Computers (ft. Dan Boneh) [E61gUCKcx2s]"
   }
 }

@@ -1,0 +1,260 @@
+{
+  "created": "2026-11-23T08:44:45.876210+00:00",
+  "kb_dir": "C:/SATHYA/CHAINAIM3003/mcp-servers/FINAGENTS/FINAGENTS1/Transcript_agent/CHAINAIM-TEAM-RESEARCH/GENERAL-RESEARCH/output",
+  "manifest": "manifest.json",
+  "backup_dir": "C:/SATHYA/CHAINAIM3003/mcp-servers/FINAGENTS/FINAGENTS1/Transcript_agent/CHAINAIM-TEAM-RESEARCH/GENERAL-RESEARCH/output/kb_backup_20261123T084414Z",
+  "entries": [
+    {
+      "key": "wEpw20UIfzI",
+      "title": "How I Let Claude Cowork Manage My Emails (Step by Step)",
+      "old_stem": "wEpw20UIfzI",
+      "new_stem": "How I Let Claude Cowork Manage My Emails (Step by Step) [wEpw20UIfzI]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/wEpw20UIfzI.txt",
+          "new": "kb/full/How I Let Claude Cowork Manage My Emails (Step by Step) [wEpw20UIfzI].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/wEpw20UIfzI.txt"
+        }
+      }
+    },
+    {
+      "key": "sJPux4buZN0",
+      "title": "I Gave Claude Cowork My Worst Inbox (47,693 Emails)...",
+      "old_stem": "sJPux4buZN0",
+      "new_stem": "I Gave Claude Cowork My Worst Inbox (47,693 Emails) [sJPux4buZN0]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/sJPux4buZN0.txt",
+          "new": "kb/full/I Gave Claude Cowork My Worst Inbox (47,693 Emails) [sJPux4buZN0].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/sJPux4buZN0.txt"
+        }
+      }
+    },
+    {
+      "key": "YtRIj_KU9d4",
+      "title": "Design Claude Code Like a Senior Engineer",
+      "old_stem": "YtRIj_KU9d4",
+      "new_stem": "Design Claude Code Like a Senior Engineer [YtRIj_KU9d4]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/YtRIj_KU9d4.txt",
+          "new": "kb/full/Design Claude Code Like a Senior Engineer [YtRIj_KU9d4].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/YtRIj_KU9d4.txt"
+        }
+      }
+    },
+    {
+      "key": "n35KalqEwJc",
+      "title": "Git Worktrees Explained — Run Multiple AI Agents in Parallel (Claude Code Tutorial)",
+      "old_stem": "n35KalqEwJc",
+      "new_stem": "Git Worktrees Explained — Run Multiple AI Agents in Parallel (Claude Code Tutorial) [n35KalqEwJc]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/n35KalqEwJc.txt",
+          "new": "kb/full/Git Worktrees Explained — Run Multiple AI Agents in Parallel (Claude Code Tutorial) [n35KalqEwJc].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/n35KalqEwJc.txt"
+        }
+      }
+    },
+    {
+      "key": "RegzpFdW8pM",
+      "title": "10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill",
+      "old_stem": "RegzpFdW8pM",
+      "new_stem": "10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill [RegzpFdW8pM]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/RegzpFdW8pM.txt",
+          "new": "kb/full/10 GitHub Repos So Good They Shouldn't Be Free — And the Paid Tools They Kill [RegzpFdW8pM].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/RegzpFdW8pM.txt"
+        }
+      }
+    },
+    {
+      "key": "mYSRn6PC1mc",
+      "title": "Full Workshop: Build Your Own Deep Research Agents - Louis-François Bouchard, Paul Iusztin, Samridhi",
+      "old_stem": "mYSRn6PC1mc",
+      "new_stem": "Full Workshop Build Your Own Deep Research Agents - Louis-François Bouchard, Paul Iusz [mYSRn6PC1mc]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/mYSRn6PC1mc.txt",
+          "new": "kb/full/Full Workshop Build Your Own Deep Research Agents - Louis-François Bouchard, Paul Iusz [mYSRn6PC1mc].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/mYSRn6PC1mc.txt"
+        }
+      }
+    },
+    {
+      "key": "bSDkbx5rrpM",
+      "title": "This Is The First Real Shape Of AGI: Fusion Agents",
+      "old_stem": "bSDkbx5rrpM",
+      "new_stem": "This Is The First Real Shape Of AGI Fusion Agents [bSDkbx5rrpM]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/bSDkbx5rrpM.txt",
+          "new": "kb/full/This Is The First Real Shape Of AGI Fusion Agents [bSDkbx5rrpM].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/bSDkbx5rrpM.txt"
+        }
+      }
+    },
+    {
+      "key": "tf6VNGH3tRk",
+      "title": "Marc Sloan - Harness engineering beyond code - product & design constraints for agents - AI Native D",
+      "old_stem": "tf6VNGH3tRk",
+      "new_stem": "Marc Sloan - Harness engineering beyond code - product & design constraints for agents [tf6VNGH3tRk]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/tf6VNGH3tRk.txt",
+          "new": "kb/full/Marc Sloan - Harness engineering beyond code - product & design constraints for agents [tf6VNGH3tRk].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/tf6VNGH3tRk.txt"
+        }
+      }
+    },
+    {
+      "key": "Z47vatpsGPI",
+      "title": "Fireside Chat with Boris Cherny, Head of Claude Code",
+      "old_stem": "Z47vatpsGPI",
+      "new_stem": "Fireside Chat with Boris Cherny, Head of Claude Code [Z47vatpsGPI]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/Z47vatpsGPI.txt",
+          "new": "kb/full/Fireside Chat with Boris Cherny, Head of Claude Code [Z47vatpsGPI].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/Z47vatpsGPI.txt"
+        }
+      }
+    },
+    {
+      "key": "BOOfy3Yshtw",
+      "title": "Loop Engineering to Graph Engineering",
+      "old_stem": "BOOfy3Yshtw",
+      "new_stem": "Loop Engineering to Graph Engineering [BOOfy3Yshtw]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/BOOfy3Yshtw.txt",
+          "new": "kb/full/Loop Engineering to Graph Engineering [BOOfy3Yshtw].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/BOOfy3Yshtw.txt"
+        }
+      }
+    },
+    {
+      "key": "8G_1-3IO4ZQ",
+      "title": "WTF Is the Context Layer? The Missing Infrastructure for Production Agents — Prukalpa Sankar",
+      "old_stem": "8G_1-3IO4ZQ",
+      "new_stem": "WTF Is the Context Layer The Missing Infrastructure for Production Agents — Prukalpa S [8G_1-3IO4ZQ]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/8G_1-3IO4ZQ.txt",
+          "new": "kb/full/WTF Is the Context Layer The Missing Infrastructure for Production Agents — Prukalpa S [8G_1-3IO4ZQ].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/8G_1-3IO4ZQ.txt"
+        }
+      }
+    },
+    {
+      "key": "8D8ewFBJfFM",
+      "title": "Matt Pocock's Claude Code Skills Beat Superpowers Now",
+      "old_stem": "8D8ewFBJfFM",
+      "new_stem": "Matt Pocock's Claude Code Skills Beat Superpowers Now [8D8ewFBJfFM]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/8D8ewFBJfFM.txt",
+          "new": "kb/full/Matt Pocock's Claude Code Skills Beat Superpowers Now [8D8ewFBJfFM].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/8D8ewFBJfFM.txt"
+        }
+      }
+    },
+    {
+      "key": "Kh9mqTzjuEQ",
+      "title": "Build A Reasoning Model From Scratch 1: Motivation & Code Setup",
+      "old_stem": "Kh9mqTzjuEQ",
+      "new_stem": "Build A Reasoning Model From Scratch 1 Motivation & Code Setup [Kh9mqTzjuEQ]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/Kh9mqTzjuEQ.txt",
+          "new": "kb/full/Build A Reasoning Model From Scratch 1 Motivation & Code Setup [Kh9mqTzjuEQ].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/Kh9mqTzjuEQ.txt"
+        }
+      }
+    },
+    {
+      "key": "E61gUCKcx2s",
+      "title": "How Bitcoin Survives Quantum Computers (ft. Dan Boneh)",
+      "old_stem": "E61gUCKcx2s",
+      "new_stem": "How Bitcoin Survives Quantum Computers (ft. Dan Boneh) [E61gUCKcx2s]",
+      "moves": [
+        {
+          "fmt": "txt",
+          "old": "kb/full/E61gUCKcx2s.txt",
+          "new": "kb/full/How Bitcoin Survives Quantum Computers (ft. Dan Boneh) [E61gUCKcx2s].txt"
+        }
+      ],
+      "old_entry": {
+        "full_paths": {
+          "txt": "kb/full/E61gUCKcx2s.txt"
+        }
+      }
+    }
+  ]
+}
