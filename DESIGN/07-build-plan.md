@@ -389,7 +389,7 @@ Offline suite uses recorded API JSON fixtures (labelled). Live: add one public r
 
 ## 5. PHASE 2 — Automation, taste, discovery, one local app
 
-### PR-7 · `feat/automation-digest` · tag `v2.1.0`
+### PR-7 · `feat/automation-digest` · tag `v2.1.0` — DONE AS PR-6 (AI-free: Task Scheduler + non-AI weekly digest, branch `dev`, tag v1.4.0)
 - `scripts/run_pipeline.py` — flags `--stages extract,synthesize,index,digest`, `--max-items`,
   `--budget`. Single entry point. File lock (`pipeline.lock`) prevents overlapping runs;
   stale lock (> `--lock-timeout-min`, default 120) is reported, not silently deleted.

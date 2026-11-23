@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "45/45 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "48/48 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -112,7 +112,7 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `pack` \| `github` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `pack` \| `github` \| `digest` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
@@ -178,6 +178,24 @@ subfolders). Every cut (too many paths, oversized file, size cap) is stated in t
   only repos whose latest commit changed.
 - Limits in `config.yaml` → `github:` (`max_repos`, `max_files`, `max_file_bytes`, `max_total_bytes`,
   `max_tree_entries`, `include_forks`, `include_archived`, `min_delay_s`, `min_remaining`, `timeout_s`).
+
+## Automation: nightly + weekly (PR-6, Windows Task Scheduler, no AI)
+Scripts live in `ops/` at the repo root (Windows PowerShell 5.1 compatible):
+- `ops/run_nightly.ps1` — collect new links (YouTube + GitHub) → `build_kb_pack.py` (prompts + INDEX.md).
+- `ops/run_weekly.ps1` — `scripts/digest.py`: `kb/digests/<year>-W<week>.md` listing everything added in
+  the last 7 days, with links and whether a summary is saved (no AI).
+- `ops/register_tasks.ps1` — creates/updates the two scheduled tasks (`ChainAIM-Research-Nightly` daily
+  02:30, `ChainAIM-Research-Weekly` Sunday 09:00). Runs as you, only while you're logged on, starts late
+  if the PC was off, never overlaps (shared `pipeline.lock`), 2-hour limit. `-WhatIf` previews,
+  `-Unregister` removes. Options: `-NightlyAt`, `-WeeklyDay`, `-WeeklyAt`, `-KbDir`, `-SourceList`,
+  `-SourceDir`, `-TimeLimitHours`.
+- Every run writes `logs/<date>-nightly.log` / `-weekly.log` (git-ignored). Exit codes: 0 OK, 1 a step
+  failed, 2 skipped because another run was active.
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ops\run_nightly.ps1      # run once now
+powershell -NoProfile -ExecutionPolicy Bypass -File ops\register_tasks.ps1 -WhatIf
+uv run scripts/digest.py --dry-run                                             # preview the digest
+```
 
 ## Summaries with ANY AI, by hand (no AI inside the agent)
 The agent never calls an AI. To summarise, it prepares one ready-to-paste prompt per transcript:
