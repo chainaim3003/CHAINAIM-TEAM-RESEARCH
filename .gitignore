@@ -11,3 +11,21 @@ Thumbs.db
 # Generated KB output (transcripts, manifest, ledger). UNCOMMENT the next line if you
 # do NOT want the extracted knowledge base tracked in git. Leave commented to keep it.
 # GENERAL-RESEARCH/output/
+
+# Local secrets (PR-0, DESIGN/07-build-plan.md §2.1).
+# Real keys live ONLY in .env, which must never be committed or pasted into chat.
+# .env.example (names only, no values) IS tracked so every key is documented.
+.env
+.env.*
+!.env.example
+
+# Local run artefacts (Phase 1-2). Logs and the run lock are machine-specific.
+# NOTE: no blanket *.lock rule - chainaim-deep-research/uv.lock must stay tracked.
+logs/
+pipeline.lock
+
+# Backups written by migrate_manifest.py / rename_kb.py before they change anything.
+kb_backup_*/
+
+# Local PR-body drafts used with `gh pr create --body-file .pr/<PR-ID>.md`.
+.pr/
