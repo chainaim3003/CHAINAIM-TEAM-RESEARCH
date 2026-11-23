@@ -2,7 +2,7 @@
 
 Implements the contract interface (DESIGN/01-architecture-contract.md section 4):
     manifest.seen(key) -> bool
-    manifest.record(key, url, hash, paths, status, *, source_line=None)
+    manifest.record(key, url, hash, paths, status, *, source_line=None, title=None, stem=None)
 
 The manifest is a JSON object keyed by source key (e.g. the 11-char YouTube id).
 It is the durable record of what has already been extracted, so re-runs are
@@ -85,6 +85,8 @@ class Manifest:
         status: str = "extracted",
         *,
         source_line: Optional[str] = None,
+        title: Optional[str] = None,
+        stem: Optional[str] = None,
     ) -> None:
         """Record (or update) a manifest entry. Matches the contract schema.
 
@@ -99,6 +101,10 @@ class Manifest:
             source_line: OPTIONAL original input line, kept verbatim as an audit trail of
                 where the source came from (notes, table rows). Omitted from the entry when
                 None, so entries written before PR-1 and after it share one schema.
+            title: OPTIONAL source title (PR-2), e.g. the YouTube video title from oEmbed.
+                Omitted when unknown (lookup failed or naming="id").
+            stem: OPTIONAL file name without extension used for this entry's files
+                (PR-2: "<Title> [<key>]"). Omitted when the file is named by key only.
         """
         entry: Dict[str, Any] = {
             "source_url": url,
@@ -109,6 +115,10 @@ class Manifest:
         }
         if source_line is not None:
             entry["source_line"] = source_line
+        if title is not None:
+            entry["title"] = title
+        if stem is not None:
+            entry["stem"] = stem
         self._data[key] = entry
         if self.autosave:
             self.save()

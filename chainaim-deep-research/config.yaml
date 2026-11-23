@@ -27,12 +27,21 @@ output:
   highlights_dir: "kb/highlights"   # synthesized entries (relative to kb_dir) — V2+ / manual V1
   manifest: "manifest.json"         # dedupe ledger (relative to kb_dir)
   formats: ["txt"]                  # extracted formats to write: any of txt, md, json
+  # PR-2 file naming. "title_id" -> "<Title> [<id>].txt" (title from YouTube oEmbed, free, no key;
+  # falls back to "<id>" with a warning if the lookup fails). "id" -> "<id>.txt" (no lookup).
+  # Override per run with --naming.
+  naming: "title_id"
+  max_stem_len: 100                 # max file-name length without extension (keeps Windows paths < 260)
 
 youtube:
   # In-repo skill, vendored under <repo>/agent-skills. RELATIVE to THIS package dir
   # (anchored by orchestrate._anchor, NOT the shell cwd) -> portable across machines/clones.
   transcript_script: "../agent-skills/skills/youtube-transcript/scripts/get_transcript.py"
   timestamps: false                 # default; overridable per-run with --timestamps / --no-timestamps
+  title_lookup:                     # oEmbed title lookup used when output.naming = title_id
+    timeout_s: 10.0                 # per-request timeout
+    retries: 2                      # extra attempts on network errors / HTTP 5xx (4xx = final)
+    backoff_s: 1.0                  # first retry delay; doubles each retry
   throttle:
     min_delay_s: 2.0                # minimum seconds between extractor calls
     jitter_s: 1.0                   # random 0..jitter added to each delay
