@@ -1,0 +1,38 @@
+# Dependabot configuration for CHAINAIM-TEAM-RESEARCH
+#
+# Costs no AI credits - plain GitHub infrastructure.
+#
+# Ecosystem note: this project uses uv, so the identifier is "uv", not "pip".
+# The pip ecosystem does not read uv.lock, so "pip" here would silently do
+# nothing. Verified against GitHub's supported-ecosystems reference.
+#
+# Deliberate choices:
+#  - Major version bumps are IGNORED. They are breaking by definition and need
+#    a human to plan them, not an automatic PR.
+#  - Low PR limit. Each PR triggers a CI run.
+#  - The "github-actions" ecosystem is deliberately NOT configured. gh-aw
+#    generates .github/workflows/*.lock.yml with every action pinned to a SHA
+#    and regenerates it on each `gh aw compile`; Dependabot cannot tell that
+#    generated file from a hand-written one and opens PRs the next compile
+#    overwrites. Use `gh aw update` for gh-aw's actions, and review ci.yml's
+#    own actions by hand about once a quarter.
+version: 2
+
+updates:
+  - package-ecosystem: "uv"
+    directory: "/chainaim-deep-research"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"

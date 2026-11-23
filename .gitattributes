@@ -1,0 +1,24 @@
+# Normalise line endings.
+#
+# Without this, files written on Windows get CRLF endings and git reports
+# every line of every file as changed. On 2026-11-23 that made 54 files look
+# modified with 11,212 insertions, when only 3 files and 59 lines had actually
+# changed. It makes diffs, reviews and release reports unreadable.
+#
+# After adding this file, run ONCE:  git add --renormalize .
+# That produces a single large commit that fixes the endings for good.
+
+* text=auto eol=lf
+
+# PowerShell is conventionally CRLF on Windows.
+*.ps1 text eol=crlf
+
+# Never touch these.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.pdf  binary
+*.zip  binary
+
+.github/workflows/*.lock.yml linguist-generated=true

@@ -1,0 +1,16 @@
+# Code owners for CHAINAIM-TEAM-RESEARCH
+#
+# Takes effect once branch protection requires review from code owners.
+# Until then it only pre-fills the reviewer on a pull request.
+
+# Default owner for everything in the repo
+*                               @chainaim3003
+
+# Automation and CI config - owner review required
+/.github/                       @chainaim3003
+
+# Design decisions
+/DESIGN/                        @chainaim3003
+
+# Pipeline code and its public interface
+/chainaim-deep-research/        @chainaim3003
