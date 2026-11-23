@@ -1,0 +1,499 @@
+<!-- transcript_hash: sha256-3bc92fceeb21e49a -->
+# Summarise this video transcript
+
+You are given the FULL transcript of a YouTube video. The transcript comes from YouTube's own
+captions, so it may contain caption mistakes, filler words ("you know", repeated words),
+`[music]` tags and `>>` speaker-change markers.
+
+**Video:** How I Let Claude Cowork Manage My Emails (Step by Step)
+**Source:** https://www.youtube.com/watch?v=wEpw20UIfzI
+
+## Write, in Markdown, in this order
+1. **TL;DR** — at most 3 sentences: the single most useful takeaway.
+2. **Key points** — bullets; each one must be supported by the transcript.
+3. **Names & terms** — tools, products, people, numbers mentioned. If a caption error is
+   obvious and you are certain (e.g. "cloud code" -> "Claude Code"), correct it and list the
+   correction here.
+4. **Unclear parts** — anything ambiguous or garbled in the transcript.
+
+## Rules
+- Use ONLY the transcript below. Do not add facts it does not contain.
+- If something is unclear, say so instead of guessing.
+- Keep it short and skimmable.
+
+Save your answer as: `kb/highlights/How I Let Claude Cowork Manage My Emails (Step by Step) [wEpw20UIfzI].md`
+
+--- TRANSCRIPT START ---
+I gave Claude a simple instruction. Go
+through my inbox, find everything that
+needs a reply, and draft responses for
+me. About 45 seconds, it had read 23
+emails, identified seven that needed
+responses, and written drafts for all of
+them in my tone with context from their
+original thread. I didn't build a
+workflow. In fact, I didn't even write a
+single line of code. I only asked. In
+this video, I'm going to show you
+exactly how to set this up, and then
+take it even further with scheduled
+automations that run your inbox for you
+every single morning. So, first, let me
+show you how to set up your email into
+Claude
+What we're going to do is grab this
+customize icon, which looks like a
+briefcase. Then, what we're going to do
+is go into connectors, which is towards
+the top, and click on this plus icon
+next to web. So, you're going to browse
+your connectors and add in your email
+service. Now, since I use Gmail for my
+daily driver, I'm going to add in Gmail.
+So, click this plus icon, and it says
+grant access to Gmail. In fact, my other
+screen just populated it. And it says
+connect Claude to Gmail. I'm going to
+click continue. This is blurred out, but
+I'm just going to add in my email over
+here, and then I'm going to click on
+continue.
+And then, Claude for Gmail already has
+some access. I'm going to click
+continue.
+And then, open Claude.
+Obviously, I get these errors over here.
+This is just from another setup that
+I've already had, and I know that
+there's issues over here. But, then you
+get put into this page over here. So,
+get Gmail profile, drafts, labels,
+emails, thread, search, as well as
+write. So, write and delete needs
+approval, but if you want to
+automatically allow it, you can change
+that.
+If you disagree with any of these over
+here, you can change the icon. So, by
+default, all of these are always allow.
+You can say needs approval, or you could
+block. So, for write and delete tools,
+if you want to create a Gmail draft, and
+you say, "Hey, I don't want to do this."
+block it. But, you should keep it as
+needs approval. And this is straight out
+of the box. And to show you how fast we
+could start this off, I'm going to type
+in what's in my inbox today. And I'm
+going to click let's go. Okay, and we
+got our responses back with just these
+few words over here. First is any in
+community challenge. I just recently
+uploaded a video on email automation.
+Since I got a 28 out of 30, I actually
+checked my responses over here, and I
+got 29 correct, but they gave me a score
+of 28. So, I think there was some math
+wrong on the any inside of things, but a
+really fun project. We have the full
+40-minute video built here on the
+channel. Some company reached out, which
+I have to take a look at this piece of
+software or not. So, from school, so
+weekly digest from my group. I'm in a
+few other school groups, so this was
+just an update over here. And then,
+also, funny enough, this guy over here
+was in the any in community challenge
+also, and just missed one question. So,
+we were tied on there.
+We were actually talking about it this
+morning. All right, and then we you can
+see that there's updates. So, Hype Fury
+is just metrics for Twitter X. And you
+know, I don't really use it as much as I
+really should, but you can see I lost
+six followers. Google Search Console, we
+have that over here, an indexing issues,
+so I need to check that out. A Medium
+Daily Digest, I don't really check out
+Medium as much as I should. A Digital
+Ocean, don't use that. And then, a
+Google Security Alert, Claude for Gmail
+granted access to your account, which we
+just covered. And two things that were
+worth opening, 28 out of 30 any in
+score, curious what the two misses were.
+And so, obviously, I only missed one,
+which is a good thing to take a look at.
+It just says curious what the two misses
+were. And then, it says sources, Gmail.
+If I click on that, it goes to my Gmail.
+So, I want to show you guys three
+additional prompts that I find might be
+a little bit helpful. Obviously, there's
+a ton that you could utilize, but the
+first one is find any emails that I
+haven't gotten a reply in 3 plus days.
+So, look for any type of conversation
+chains
+that might be worth flagging. And I'm
+going to click let's go and show you
+those specific results. Okay, and here
+are our results. Some of this is going
+to be filtered out just for privacy
+reasons. First, we have someone that
+reached out to the channel for AI
+consulting services. Vincent, 9 days
+ago, no reply. We sent him over the
+calendar, but they never booked a
+specific meeting. So, I'm going to send
+it over a response on that side of
+things. Next, one of my customers over
+here sent me
+Gemini and asked if Gemini could review
+specific YouTube videos. Gemini Pro to
+watch 50 plus Canol videos. And
+essentially, I did not respond back. I
+meant to respond back yesterday, but
+this is going to be on my to-do list for
+today.
+And lastly, I have a coaching customer
+that wants to push a meeting from March
+17th, which obviously passed, into the
+first week of April. I said no worries
+over there, but you know, April is
+coming next week. I'm recording on the
+26th. So, I want to schedule that in my
+calendar, and that is something I will
+have to do as well today. What's really
+cool is it says not quite 3 days yet,
+but worth mentioning. We have someone
+from Data for SEO that says YouTube
+sponsorship for Data for SEO. I sent
+over a sponsorship proposal PDF, but I
+have not received a response as of yet.
+It's almost 3 days, it mentions it over
+here, 3 days on Friday. If you don't
+hear back, and then it gives us the
+source on Gmail. Now, it says want me to
+draft any follow-up replies for these,
+but I'm going to show you guys that as
+well in another prompt. So, while we
+could have built out a reply for any of
+those emails in the last conversation we
+had in Cowerk, I just wanted to show you
+another prompt that you could utilize
+out of the box. So, imagine you already
+have a thread that you want to get a
+response to. So, for example, I'm
+putting over here, read the thread on
+Data for SEO and draft a reply for me.
+Do not send an email. I just literally
+want a draft that it might say give me a
+few minutes. You can see I get prompted,
+"Where is the Data for SEO thread
+located?" I said Gmail, and the main
+thread is YouTube sponsorship for Data
+for SEO.
+They give me a thread recap. Reached out
+March 4th about YouTube sponsorship, got
+on a call March 18th, sent the proposal
+on March 24th, but no response yet. And
+it gives me a draft reply. It says short
+and low pressure, keeps the ball moving
+without being pushy. Want me to adjust
+the tone or add or remove anything
+before you send it. It has the source
+for that specific thread. Obviously,
+this is a simple thread, just a few
+messages going back and forth. And
+lastly, maybe you want to set up a
+prompt where you only take a look at the
+last so many emails. So, I put over
+here, summarize my last 20 unread
+emails, flag anything urgent. Okay, and
+you'll see the ones over here. I have an
+email delivery failure. I have GitHub
+Copilot data policy change deadline
+April 24th. Subscriber changes
+decreasing. So, this is just a any in
+automation alert, so I'm not going to go
+over that too specific. And then, things
+worth knowing, Google Security Alert
+routine notification, you granted Claude
+for Gmail access to your Google account.
+Hype Fury, which we already talked
+about. School, we got some messages over
+here. Educative.io partnership outreach.
+Kaggle, which I used to do that all the
+time for data science videos. Then, we
+have school AI automation over here,
+school data and AI. And then, we have
+some noise low priority over here.
+ManyChat,
+used that for a customer, and I'm going
+to utilize that hopefully for business I
+buy into. WPBeginner, Love Art, Medium,
+and then Digital Ocean. It says TLDR,
+three things to act on over here. Inbox
+out of GitHub Copilot training, and then
+subscriber loss report. One of the great
+things about Cowerk is if you use the
+same prompt over and over again, you
+might as well build this into something
+called a skill. And what this allows us
+to do is iterate and improve over a
+prompt and store it as well in Cowerk.
+So, you don't have to type it out every
+single time. So, what I'm going to do is
+turn our prompt that we used, which is
+the find any emails I sent haven't got a
+reply to in 3 plus days, into a specific
+skill. And really quick, if you don't
+know where skills are, go over here to
+customize, and you can see skills like
+that. And I have different skills for my
+website. I have different skills for my
+YouTube channel, as well as customers
+and content extraction. So, tons of
+skills over here, and I don't want to
+create these prompts every time. And you
+can see over here, I have a blog post
+updater. Some of this is blurred out
+obviously for security reasons, but it's
+a very long prompt, and I keep iterating
+over it. And the last updated as of
+yesterday. Regardless, what we're going
+to do is take this and build this into a
+skill.
+So, all I'm going to only get right over
+here is can you
+please
+help me turn this prompt
+into a usable skill. Call it no reply
+3 days.
+Okay, and our skill is built. Probably
+took about 5 to 10 minutes.
+Unfortunately, they do take a little bit
+long. Obviously, it goes through some
+test scenarios as you build out your
+skill. But, you can see a lot of
+messages back and forth. It went through
+some different tests. Without a skill,
+18 out of 13. With skill, 13 out of 13.
+And then, make sure it gives you your
+skill file, because sometimes it will
+give you a skill file, sometimes it
+won't. So, make sure you get your skill
+file. And it says, "Here you go,
+download no reply skill." And honestly,
+we can take a look at this over here.
+Find emails Ryan sent that haven't
+received a reply in three or more days.
+Trigger the skill whenever Ryan asked
+about unanswered emails, wants to know
+who hasn't replied, needs to follow up,
+wonders what's been left hanging.
+So, you can find like way much way
+better of a prompt than what I just put
+over here.
+We have step one, step two, step three,
+step four, and then also some additional
+tips. Again, if we don't like any of
+this, we can update this over time, but
+it really builds out a pretty thorough
+prompt on that. And all you got to do is
+click over here to copy to your skills.
+And this is now on your skills. You can
+click over there to manage, and you'll
+see at the very top, no reply 3 days.
+And if you want to turn off the skill,
+just click on that button. It says
+disabled. Turn it back on, it is
+enabled. And this is all ready to go
+over here. You can also edit this in
+line, or you could edit this with
+Claude. So, you can just prompt it and
+say, "Hey, I want to change this." or
+"Hey, I want to change this directly in
+here." and choose edit in line. If you
+want to learn more about skills, I have
+a full video here on the channel. But
+now, let's talk about how we can
+actually turn this into a scheduled task
+that runs every single day without you
+even having to prompt. So really quick
+before my scheduled task, I just want to
+show you that you can call your skill
+directly in here. You can click plus,
+you can do skill and just grab that. So
+you can see no reply in 3 days auto
+populate, so you don't have to write
+this out. Or I can say run the
+no reply
+3 day skill. And based off of what you
+type in over here, it will pick up the
+skill. But now let's jump into our
+scheduled task. So what you're going to
+do is look for this icon that looks like
+a clock, and we're going to click on
+that.
+And we're going to choose new task. And
+one thing to know about scheduled task
+is this will only run if your computer
+is awake. One of the quirks about
+Co-work is your computer has to be on
+for it to work. So make sure that you
+schedule your task when you're online.
+If you do not wake up at 5:00 a.m. in
+the morning, do not schedule a task for
+5:00 a.m. So I'm going to click on new
+task. I'm going to call this daily
+emails.
+And my description,
+find emails
+to respond to.
+And our prompt we're going to write out
+over here is I'm going to say use the no
+reply
+3 day skill
+skill
+to find emails
+I need to respond to.
+I'm going to choose a frequency, and I
+want to choose this as a daily. Maybe I
+want to have this at 9:00 a.m. I'm just
+using this as a default one. You have
+other options as well, like what model
+you want to choose if you want to work
+in a folder. I'm going to click save.
+Now every day at 9:00 a.m. that skill is
+going to run. So daily emails, you can
+set this up over here.
+And uh
+we can also click run now if we want to
+run this right now and test it out. I'm
+going to click run now just to show you
+that this works properly, but you can
+see it says next run tomorrow at 9:04
+a.m. You can see it says scheduled task
+daily emails started. You can click
+view.
+And we have our skill, which our skill
+populates the no reply in 3 days, which
+we just built out together. So really
+important context over there. If you
+already have a skill, um you can save
+that within your scheduled task. So now
+you don't even need to type out your
+prompt. Every day at 9:00 a.m. it's
+going to automatically go through your
+inbox, find things that you have not
+responded to in 3 days, and then
+populate it here directly in Claude
+Co-work. Hopefully you guys are seeing
+how much value that there is in this.
+Okay, and then you can see emails
+waiting on a reply. Obviously I've just
+blurred out some of this information for
+you guys. And then two emails waiting on
+a reply data for SEO, any and YouTube
+tutorial, and then also an AI agent
+build-out and with our sources once
+again. So last thing I want to say is
+Co-work is not just limited to Gmail
+working by itself.
+You can actually connect Gmail to other
+external tools. So again, all you're
+going to do is go to customize and add
+in connectors. Let's say you want to
+automatically take a Gmail and build
+something in Google Calendar. Well, you
+could set up Google Calendar. If you
+want to take a Gmail attachment and send
+it to drive, you might want to add in a
+connector for Google Drive. If you want
+to build out task based off of email
+chain, maybe you want to set up Notion.
+Or if you want to get updates, send that
+into Slack. So again, just go to your
+connectors and add that on. And you
+know, you might be thinking, "Hey, I I
+don't know where I want to start."
+Really, there's two different ways that
+you could do this. First, you can
+actually just prompt directly in Co-work
+and say something like, "I want
+to connect
+my
+important emails
+to Slack and send it
+send them in XYZ channel.
+Can you
+help me build this process?
+And then turn it into a skill?
+So you can build out something like
+that.
+Or you can take a look at what Co-work
+already has built out. And the way that
+you can do that is actually go into this
+ideas tab, and you can see for example,
+we have something over here, write a
+meeting follow-up. This involves both
+our calendar as well as Gmail. And then
+we have something like create a daily
+briefing. And you can see it has
+calendar, Gmail as well as Slack. So I'm
+just going to test this one out for you
+guys. And I have a full video on ideas
+as well if you want to really dive into
+it. Um a TLDR though, the more things
+that you connect within a Co-work, the
+more ideas that are going to be built
+out over here. And you can change by
+roles, you can change by different
+ideas, whether it's like a plugin or
+create, analyze, etc. But let's go into
+this daily briefing.
+And I'm going to pause this because I'm
+not going to run it. But I says, "I want
+a daily briefing. Give me a space to
+share what I'd like to focus on, check
+which of my tools are connected,
+calendar, email, Slack, or others.
+Suggest any might be useful, then pull
+everything together to make a clear
+picture of my day." So if you're
+scattered and you have no idea what to
+do and you have a lot of things on your
+calendar, you have a lot of things that
+are sent to your email or your Slack,
+you could use a prompt like this and it
+can help you condense all of that
+information, something that might take
+you 30 minutes or an hour in the morning
+within 5 minutes. And hopefully again,
+you are seeing the power of Co-work. Not
+only can we automate going through our
+inbox, we could also go and connect it
+to other tools. We can set up schedules
+to run every single day. Just make sure
+that your computer is on. And that is a
+wrap for our email in Claude Co-work.
+Hopefully you guys found a ton of value
+in this video. If you did, make sure to
+subscribe to the channel. We're
+uploading anywhere from like three to
+five videos every single week. And if
+you want to find more valuable stuff,
+there's a ton here on the channel. If
+you want to join other people that are
+interested in utilizing AI, whether
+you're an operator or a builder, we have
+a free school group down below as well
+in the description. I think we have like
+1,300 members. We have free weekly
+calls, and I'll catch you guys there.
+See you in another video.
+--- TRANSCRIPT END ---
