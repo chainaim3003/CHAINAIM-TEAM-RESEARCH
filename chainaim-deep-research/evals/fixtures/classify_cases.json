@@ -1,12 +1,87 @@
 [
-  { "input": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "kind": "youtube", "key": "dQw4w9WgXcQ" },
-  { "input": "https://youtu.be/dQw4w9WgXcQ",                "kind": "youtube", "key": "dQw4w9WgXcQ" },
-  { "input": "https://youtube.com/embed/dQw4w9WgXcQ",       "kind": "youtube", "key": "dQw4w9WgXcQ" },
-  { "input": "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s", "kind": "youtube", "key": "dQw4w9WgXcQ" },
-  { "input": "dQw4w9WgXcQ",                                 "kind": "youtube", "key": "dQw4w9WgXcQ" },
-  { "input": "  dQw4w9WgXcQ  ",                             "kind": "youtube", "key": "dQw4w9WgXcQ" },
-  { "input": "https://github.com/anthropics/anthropic-sdk-python", "kind": "unknown", "key": null },
-  { "input": "https://example.com/some-article",           "kind": "unknown", "key": null },
-  { "input": "not a url at all",                           "kind": "unknown", "key": null },
-  { "input": "shortid123",                                "kind": "unknown", "key": null }
+  {
+    "input": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "kind": "youtube",
+    "key": "dQw4w9WgXcQ"
+  },
+  {
+    "input": "https://youtu.be/dQw4w9WgXcQ",
+    "kind": "youtube",
+    "key": "dQw4w9WgXcQ"
+  },
+  {
+    "input": "https://youtube.com/embed/dQw4w9WgXcQ",
+    "kind": "youtube",
+    "key": "dQw4w9WgXcQ"
+  },
+  {
+    "input": "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s",
+    "kind": "youtube",
+    "key": "dQw4w9WgXcQ"
+  },
+  {
+    "input": "dQw4w9WgXcQ",
+    "kind": "youtube",
+    "key": "dQw4w9WgXcQ"
+  },
+  {
+    "input": "  dQw4w9WgXcQ  ",
+    "kind": "youtube",
+    "key": "dQw4w9WgXcQ"
+  },
+  {
+    "input": "https://github.com/anthropics/anthropic-sdk-python",
+    "kind": "github_repo",
+    "key": "gh:anthropics/anthropic-sdk-python"
+  },
+  {
+    "input": "https://example.com/some-article",
+    "kind": "unknown",
+    "key": null
+  },
+  {
+    "input": "not a url at all",
+    "kind": "unknown",
+    "key": null
+  },
+  {
+    "input": "shortid123",
+    "kind": "unknown",
+    "key": null
+  },
+  {
+    "input": "https://github.com/chainaim3003/ACTUS-MENTOR-MCP.git",
+    "kind": "github_repo",
+    "key": "gh:chainaim3003/ACTUS-MENTOR-MCP"
+  },
+  {
+    "input": "https://github.com/chainaim3003/CHAINAIM-TEAM-RESEARCH/tree/main/DESIGN",
+    "kind": "github_repo",
+    "key": "gh:chainaim3003/CHAINAIM-TEAM-RESEARCH"
+  },
+  {
+    "input": "https://github.com/chainaimlabs",
+    "kind": "github_account",
+    "key": "gh:chainaimlabs"
+  },
+  {
+    "input": "github.com/chainaimlabs/SecureSocialShare - holistic data share",
+    "kind": "github_repo",
+    "key": "gh:chainaimlabs/SecureSocialShare"
+  },
+  {
+    "input": "https://gist.github.com/someone/abc123",
+    "kind": "unknown",
+    "key": null
+  },
+  {
+    "input": "https://github.com/orgs/anthropics/repositories",
+    "kind": "unknown",
+    "key": null
+  },
+  {
+    "input": "gh:anthropics/claude-code",
+    "kind": "github_repo",
+    "key": "gh:anthropics/claude-code"
+  }
 ]

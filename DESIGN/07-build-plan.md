@@ -355,7 +355,7 @@ oversize input. Live: first run writes 1 highlight with judge scores; second run
 
 ---
 
-### PR-6 · `feat/github-summaries` · tag `v1.4.0`
+### PR-6 · `feat/github-summaries` · tag `v1.4.0` — DONE AS PR-5 (AI-free extraction + repo prompt, branch `dev`, tag v1.3.0)
 **What:** GitHub repo or account links → extracted content → same summary flow.
 - `scripts/orchestrate.py::classify`: new kinds `github_repo` (`github.com/<owner>/<repo>`),
   `github_account` (`github.com/<owner>`). Keys `gh:<owner>/<repo>`.
