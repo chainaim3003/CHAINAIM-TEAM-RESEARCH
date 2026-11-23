@@ -10,7 +10,7 @@ separate suites keyed off model.provider; they are intentionally NOT run in V1.
 Flags (Rule 8):
     --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
     --verbose        print each case, not just the summary
-    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|pack|github)
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|pack|github|digest)
 
 Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
 """
@@ -42,6 +42,7 @@ from extract.metadata import HttpStatusError, fetch_youtube_title, oembed_url  #
 from naming import safe_stem                 # noqa: E402
 from build_kb_pack import build_pack          # noqa: E402
 from envfile import load_env_file             # noqa: E402
+from digest import build_digest               # noqa: E402
 from extract import github as ghx             # noqa: E402
 from rename_kb import apply_renames, apply_undo, plan_renames, plan_undo  # noqa: E402
 
@@ -727,6 +728,51 @@ def suite_github(fixtures: Path, verbose: bool) -> Result:
     return passed, 6, fails
 
 
+def suite_digest(fixtures: Path, verbose: bool) -> Result:
+    """PR-6: weekly digest (no AI). 3 checks:
+      1. only entries extracted inside the window are listed (old and future ones excluded).
+      2. summary status and GitHub/YouTube type are correct; links use <...> targets.
+      3. an empty window says "Nothing new" and still has the week heading.
+    """
+    from datetime import datetime, timezone
+    fails: List[str] = []
+    passed = 0
+    now = datetime(2026, 11, 23, 12, 0, tzinfo=timezone.utc)
+    with tempfile.TemporaryDirectory() as tds:
+        kb = Path(tds)
+        (kb / "kb" / "highlights").mkdir(parents=True)
+        (kb / "kb" / "highlights" / "New Video [AAAAAAAAAAA].md").write_text("sum", encoding="utf-8")
+        data = {
+            "AAAAAAAAAAA": {"status": "extracted", "ts": "2026-11-22T10:00:00+00:00", "title": "New Video",
+                            "stem": "New Video [AAAAAAAAAAA]", "source_url": "https://www.youtube.com/watch?v=AAAAAAAAAAA",
+                            "full_paths": {"txt": "kb/full/New Video [AAAAAAAAAAA].txt"}},
+            "gh:o/r": {"status": "extracted", "ts": "2026-11-20T10:00:00+00:00", "title": "o/r", "kind": "github_repo",
+                       "stem": "o__r [github]", "source_url": "https://github.com/o/r",
+                       "full_paths": {"md": "kb/full/o__r [github].md"}},
+            "OLDOLDOLDOL": {"status": "extracted", "ts": "2026-10-01T10:00:00+00:00", "title": "Old",
+                            "full_paths": {"txt": "kb/full/OLDOLDOLDOL.txt"}},
+        }
+        md = build_digest(data, kb, days=7, now=now)
+        c1 = [] if ("New Video" in md and "o/r" in md and "Old" not in md) else ["window filter wrong"]
+        c2 = []
+        if "| 2026-11-22 | YouTube | New Video |" not in md or "| GitHub | o/r |" not in md:
+            c2.append("type/title row wrong")
+        if "2 item(s), 1 with a saved summary, 1 still to summarise" not in md:
+            c2.append("counts wrong")
+        if "[file](<full/New Video [AAAAAAAAAAA].txt>)" not in md:
+            c2.append("link format wrong")
+        empty = build_digest(data, kb, days=1, now=datetime(2026, 12, 30, tzinfo=timezone.utc))
+        c3 = [] if ("Nothing new in this period." in empty and "# Weekly digest 2026-W53" in empty) else ["empty digest wrong"]
+        for n, c in ((1, c1), (2, c2), (3, c3)):
+            if c:
+                fails.extend(f"digest {n}: {m}" for m in c)
+            else:
+                passed += 1
+    if verbose:
+        print(f"  digest -> {passed}/3 checks ok")
+    return passed, 3, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
@@ -737,6 +783,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "rename": suite_rename,
     "pack": suite_pack,
     "github": suite_github,
+    "digest": suite_digest,
 }
 
 
