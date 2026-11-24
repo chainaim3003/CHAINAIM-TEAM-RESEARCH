@@ -542,6 +542,13 @@ digest (digest now, scheduled-task status, logs). Logic in `app/services.py`; re
 and `pipeline.lock`. `app` eval suite (services + Streamlit AppTest smoke test). Dependency
 `streamlit>=1.40` (uv resolves 1.65.0 on Python 3.10, 1.67.0 on 3.11+).
 
+## PR-10 (done on `dev`, tag v2.1.0) - one-command setup for a new PC, AI-free
+`ops/setup.ps1`: checks the PC, installs git (winget) / uv (official installer) if missing, clones or
+fast-forwards the repo, `uv sync --frozen`, creates `Transcript\` + `links.txt`, `.env` from `.env.example`
+(optional hidden GitHub token), runs the evals, registers the scheduled tasks for `Transcript\`, runs an
+end-to-end `add_link.ps1` test, opens VS Code. Idempotent; `-DryRun`, `-Uninstall`. Docs: root
+`README.md`, `SETUP.md`, `CMD.md`. `Transcript/` is git-ignored. `setup` eval suite (static checks).
+
 ## 7. Summary table
 
 | PR | Branch | Phase | Item | Tag | Who |
