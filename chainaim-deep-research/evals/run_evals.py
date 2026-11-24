@@ -924,6 +924,163 @@ def suite_papers(fixtures: Path, verbose: bool) -> Result:
     return passed, 5, fails
 
 
+def suite_app(fixtures: Path, verbose: bool) -> Result:
+    """PR-9: local app (no AI). 6 checks on app/services.py plus a UI smoke test:
+      1. parse_links keeps the 4 supported kinds, rejects junk; add_links never duplicates a line.
+      2. list_entries reads the manifest: type labels, OK/CHECK/missing status, newest first.
+      3. save_summary refuses empty text, refuses short text unless forced, writes the right file.
+      4. run lock: acquire/holder/release; stale (dead PID) and garbage locks are ignored.
+      5. run_script streams output, ends with "EXIT <code>", writes a log.
+      6. Streamlit AppTest: page renders with no exception, shows the KB items, and the
+         Add / Save buttons show errors (and write nothing) for empty input.
+    """
+    import importlib
+    fails: List[str] = []
+    checks: List[List[str]] = []
+    sys.path.insert(0, str(PKG / "app"))
+    svc = importlib.import_module("services")
+    long_sum = "**TL;DR** " + "a real summary sentence. " * 20
+    with tempfile.TemporaryDirectory() as tds:
+        kb = Path(tds) / "kb_root"
+        hl = kb / "kb" / "highlights"
+        hl.mkdir(parents=True)
+        (kb / "kb" / "full").mkdir(parents=True)
+        (kb / "kb" / "full" / "Vid A [AAAAAAAAAAA].txt").write_text("transcript text", encoding="utf-8")
+        (hl / "Vid A [AAAAAAAAAAA].md").write_text(long_sum, encoding="utf-8")
+        (hl / "o__r [github].md").write_text("uv run scripts/x.py", encoding="utf-8")
+        data = {
+            "AAAAAAAAAAA": {"status": "extracted", "ts": "2026-11-20T10:00:00+00:00", "title": "Vid A",
+                            "stem": "Vid A [AAAAAAAAAAA]", "source_url": "https://www.youtube.com/watch?v=AAAAAAAAAAA",
+                            "full_paths": {"txt": "kb/full/Vid A [AAAAAAAAAAA].txt"}},
+            "gh:o/r": {"status": "extracted", "ts": "2026-11-22T10:00:00+00:00", "title": "o/r", "kind": "github_repo",
+                       "stem": "o__r [github]", "source_url": "https://github.com/o/r", "full_paths": {"md": "kb/full/o__r [github].md"}},
+            "arxiv:1706.03762": {"status": "extracted", "ts": "2026-11-21T10:00:00+00:00", "title": "Attention",
+                                 "kind": "arxiv_paper", "stem": "Attention [arxiv-1706.03762]",
+                                 "source_url": "https://arxiv.org/abs/1706.03762", "full_paths": {"md": "kb/full/a.md"}},
+            "BADBADBADBA": {"status": "failed", "ts": "2026-11-23T10:00:00+00:00", "full_paths": {}},
+        }
+        (kb / "manifest.json").write_text(json.dumps(data), encoding="utf-8")
+
+        # 1. links
+        c: List[str] = []
+        good, bad = svc.parse_links("https://youtu.be/AAAAAAAAAAA github.com/o/r\narxiv:1706.03762, https://example.com/post hello")
+        if len(good) != 4 or bad != ["hello"]:
+            c.append(f"parse_links wrong: {good} {bad}")
+        lst = kb / "links.txt"
+        a1, p1 = svc.add_links(lst, good)
+        a2, p2 = svc.add_links(lst, good[:2] + ["https://youtu.be/BBBBBBBBBBB"])
+        if (len(a1), len(p1), len(a2), len(p2)) != (4, 0, 1, 2) or len(lst.read_text(encoding="utf-8").splitlines()) != 5:
+            c.append("add_links duplicated or lost lines")
+        checks.append(c)
+
+        # 2. entries
+        c = []
+        paths = svc.kb_paths(str(kb))
+        rows = svc.list_entries(paths)
+        got = [(r.key, r.kind, r.status) for r in rows]
+        want = [("gh:o/r", "GitHub", "check"), ("arxiv:1706.03762", "arXiv", "missing"), ("AAAAAAAAAAA", "YouTube", "ok")]
+        if got != want:
+            c.append(f"list_entries {got}")
+        if rows and rows[-1].full is None:
+            c.append("existing full text not found")
+        checks.append(c)
+
+        # 3. save summary
+        c = []
+        paper = rows[1]
+        ok0, _ = svc.save_summary(paper, "   ", min_chars=200)
+        ok1, _ = svc.save_summary(paper, "too short", min_chars=200)
+        if ok0 or ok1 or paper.summary.exists():
+            c.append("empty/short text was saved")
+        ok2, _ = svc.save_summary(paper, "too short", min_chars=200, force=True)
+        ok3, _ = svc.save_summary(paper, long_sum, min_chars=200)
+        if not (ok2 and ok3) or paper.summary.read_text(encoding="utf-8").strip() != long_sum.strip():
+            c.append("save_summary did not write the answer")
+        if svc.summary_status_text("git push origin dev " + "x" * 300, 200) != "check":
+            c.append("command-like text not flagged")
+        checks.append(c)
+
+        # 4. lock
+        c = []
+        lock = Path(tds) / "pipeline.lock"
+        if not svc.acquire_lock(lock) or svc.lock_holder(lock) != os.getpid() or svc.acquire_lock(lock):
+            c.append("acquire/holder wrong")
+        svc.release_lock(lock)
+        if lock.exists():
+            c.append("release did not remove lock")
+        lock.write_text("99999999", encoding="ascii")
+        if svc.lock_holder(lock) is not None or not svc.acquire_lock(lock):
+            c.append("stale lock not ignored")
+        svc.release_lock(lock)
+        lock.write_text("not-a-pid", encoding="ascii")
+        if svc.lock_holder(lock) is not None:
+            c.append("garbage lock not ignored")
+        checks.append(c)
+
+        # 5. run_script (log goes to the temp dir, not the real logs/)
+        c = []
+        real_log = svc.LOG_DIR
+        svc.LOG_DIR = Path(tds) / "logs"
+        try:
+            out = list(svc.run_script(["-c", "print('hello from step')"], log_name="evaltest"))
+            bad_out = list(svc.run_script(["-c", "import sys; sys.exit(3)"], log_name="evaltest"))
+        finally:
+            svc.LOG_DIR = real_log
+        if out != ["hello from step", "EXIT 0"] or bad_out[-1] != "EXIT 3":
+            c.append(f"run_script output {out} {bad_out}")
+        logs = list((Path(tds) / "logs").glob("*-evaltest.log"))
+        if not logs or "hello from step" not in "".join(l.read_text(encoding="utf-8") for l in logs):
+            c.append("no log written")
+        checks.append(c)
+
+        # 6. UI smoke test (real Streamlit, no browser)
+        c = []
+        try:
+            from streamlit.testing.v1 import AppTest
+        except ImportError as e:  # streamlit is a declared dependency; missing means `uv sync` not run
+            c.append(f"streamlit not installed: {e}")
+        else:
+            import logging  # AppTest runs the page without a browser; Streamlit warns about that
+            logging.getLogger("streamlit.runtime.scriptrunner_utils.script_run_context").setLevel(logging.ERROR)
+            old = os.environ.get("CHAINAIM_APP_KB")
+            os.environ["CHAINAIM_APP_KB"] = str(kb)
+            try:
+                at = AppTest.from_file(str(PKG / "app" / "streamlit_app.py"), default_timeout=60).run()
+                if at.exception:
+                    c.append(f"app raised: {at.exception[0].value}")
+                else:
+                    if len(at.tabs) != 4:
+                        c.append(f"{len(at.tabs)} tabs")
+                    if not any("Library (3 items)" in s.value for s in at.subheader):
+                        c.append("library count missing")
+                    before = lst.read_text(encoding="utf-8")
+                    at.text_area(key="links_text").input("not a link").run()
+                    at.button(key="btn_extract").click().run()
+                    if not any("No valid link" in e.value for e in at.error) or lst.read_text(encoding="utf-8") != before:
+                        c.append("bad link not rejected")
+                    at.button(key="btn_save").click().run()
+                    if not any("Nothing to save" in e.value for e in at.error):
+                        c.append("empty save not rejected")
+                    if at.exception:
+                        c.append(f"app raised after clicks: {at.exception[0].value}")
+            finally:
+                if old is None:
+                    os.environ.pop("CHAINAIM_APP_KB", None)
+                else:
+                    os.environ["CHAINAIM_APP_KB"] = old
+        checks.append(c)
+
+    passed = 0
+    for n, c in enumerate(checks, 1):
+        if c:
+            fails.extend(f"app {n}: {m}" for m in c)
+        else:
+            passed += 1
+    if verbose:
+        print(f"  app -> {passed}/6 checks ok")
+    return passed, 6, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
@@ -936,6 +1093,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "github": suite_github,
     "digest": suite_digest,
     "papers": suite_papers,
+    "app": suite_app,
 }
 
 
