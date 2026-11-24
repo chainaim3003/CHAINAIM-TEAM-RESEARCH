@@ -88,6 +88,7 @@ def build_pack(
     kb_dir: Path,
     template: str,
     repo_template: Optional[str] = None,
+    kind_templates: Optional[Dict[str, str]] = None,
     prompts_rel: str = "kb/prompts",
     highlights_rel: str = "kb/highlights",
     only_key: Optional[str] = None,
@@ -122,7 +123,10 @@ def build_pack(
         if only_key and key != only_key:
             continue
         transcript = (kb_dir / rel_full).read_text(encoding="utf-8")
-        tpl = repo_template if (repo_template and entry.get("kind") == "github_repo") else template
+        kind = entry.get("kind")
+        tpl = ((kind_templates or {}).get(kind)
+               or (repo_template if (repo_template and kind == "github_repo") else None)
+               or template)
         if not force and _existing_hash(prompt_path) == content_hash(transcript):
             unchanged.append(key)
             continue
@@ -182,8 +186,13 @@ def run(args: argparse.Namespace) -> int:
     data = json.loads(paths["manifest"].read_text(encoding="utf-8"))
     repo_tpl_path = _anchor(out.get("prompt_template_repo", "synth/manual_prompt_repo.md"), ROOT)
     repo_template = repo_tpl_path.read_text(encoding="utf-8") if repo_tpl_path.exists() else None
+    kind_templates = {}
+    for kind, rel in (out.get("prompt_templates_by_kind") or {}).items():
+        pth = _anchor(rel, ROOT)
+        if pth.exists():
+            kind_templates[kind] = pth.read_text(encoding="utf-8")
     res = build_pack(
-        data, kb_dir=kb_dir, template=tpl_path.read_text(encoding="utf-8"), repo_template=repo_template,
+        data, kb_dir=kb_dir, template=tpl_path.read_text(encoding="utf-8"), repo_template=repo_template, kind_templates=kind_templates,
         prompts_rel=out.get("prompts_dir", "kb/prompts"),
         highlights_rel=out.get("highlights_dir", "kb/highlights"),
         only_key=args.key, force=args.force, dry_run=args.dry_run, write_index=not args.no_index,

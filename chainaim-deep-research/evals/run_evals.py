@@ -10,7 +10,7 @@ separate suites keyed off model.provider; they are intentionally NOT run in V1.
 Flags (Rule 8):
     --fixtures DIR   fixtures directory (default: ./fixtures next to this file)
     --verbose        print each case, not just the summary
-    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|pack|github|digest)
+    --only NAME      run only the named suite (classify|ingest|dedupe|extract|manifest|naming|rename|pack|github|digest|papers)
 
 Exit code: 0 if all pass, 1 otherwise (so CI can gate on it).
 """
@@ -43,6 +43,8 @@ from naming import safe_stem                 # noqa: E402
 from build_kb_pack import build_pack          # noqa: E402
 from envfile import load_env_file             # noqa: E402
 from digest import build_digest               # noqa: E402
+from extract import arxiv as axx              # noqa: E402
+from extract import web as wbx                # noqa: E402
 from extract import github as ghx             # noqa: E402
 from rename_kb import apply_renames, apply_undo, plan_renames, plan_undo  # noqa: E402
 
@@ -773,6 +775,139 @@ def suite_digest(fixtures: Path, verbose: bool) -> Result:
     return passed, 3, fails
 
 
+_ATOM_OK = b"""<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+ <entry><id>http://arxiv.org/abs/1706.03762v7</id><updated>2023-08-02T00:41:18Z</updated>
+  <published>2017-06-12T17:57:34Z</published><title>Attention Is
+   All You Need</title><summary> The dominant sequence transduction models ... </summary>
+  <author><name>Ashish Vaswani</name></author><author><name>Noam Shazeer</name></author>
+  <arxiv:primary_category term="cs.CL"/><category term="cs.CL"/><category term="cs.LG"/>
+ </entry></feed>"""
+_ATOM_EMPTY = b'<feed xmlns="http://www.w3.org/2005/Atom"></feed>'
+_ARTICLE_HTML = """<html><head><title>Agents in production | Example Blog</title>
+<meta name="author" content="Jane Doe"><meta property="og:site_name" content="Example Blog"></head>
+<body><nav>Home | About | Login | Subscribe</nav><article><h1>Agents in production</h1>
+<p>""" + ("Running agents in production needs evaluation, observability and guardrails. " * 12) + """</p>
+<p>The second paragraph explains context layers and why retrieval quality matters for agents.</p>
+</article><footer>Copyright 2026 Example. Cookie settings.</footer></body></html>"""
+
+
+def suite_papers(fixtures: Path, verbose: bool) -> Result:
+    """PR-7: arXiv papers + web articles -> text (no AI). Offline: injected network functions
+    (labelled test doubles); web extraction uses the REAL trafilatura on a static HTML string.
+    5 checks:
+      1. arXiv Atom parsing (title whitespace, authors, dates, categories, version); empty -> error.
+      2. full text: HTML used when long enough; PDF fallback when no HTML; abstract-only with an
+         explicit note when both fail; 3-second pacing between arXiv requests.
+      3. web: main text kept, nav/footer dropped, title/site/author captured; too-short -> WebError.
+      4. build_kb_pack picks the paper / article template by manifest kind.
+      5. digest labels arXiv and Web items.
+    """
+    from datetime import datetime, timezone
+    fails: List[str] = []
+    passed = 0
+
+    def check(n: int, msgs: List[str]) -> None:
+        nonlocal passed
+        if msgs:
+            fails.extend(f"papers {n}: {m}" for m in msgs)
+        else:
+            passed += 1
+
+    # 1
+    c1 = []
+    m = axx.parse_atom(_ATOM_OK)
+    if m["title"] != "Attention Is All You Need" or m["authors"] != ["Ashish Vaswani", "Noam Shazeer"]:
+        c1.append(f"title/authors={m['title']!r} {m['authors']}")
+    if (m["published"], m["updated"], m["versioned_id"], m["primary_category"]) != ("2017-06-12", "2023-08-02", "1706.03762v7", "cs.CL"):
+        c1.append(f"dates/ids={m}")
+    try:
+        axx.parse_atom(_ATOM_EMPTY)
+        c1.append("empty feed did not raise")
+    except axx.ArxivError:
+        pass
+    check(1, c1)
+
+    # 2
+    c2 = []
+    sleeps: List[float] = []
+
+    def make_get(html_status: int, pdf_status: int):
+        def get(url, timeout):  # TEST DOUBLE of export.arxiv.org / arxiv.org
+            if url.startswith(axx.API):
+                return 200, _ATOM_OK
+            if "/html/" in url:
+                return html_status, b"<html>paper html</html>"
+            return pdf_status, b"%PDF-fake"
+        return get
+
+    long_md = "Full paper text. " * 200
+    cl = axx.ArxivClient(http_get=make_get(200, 200), sleep=sleeps.append)
+    md, meta = axx.extract_paper(cl, "1706.03762", html_to_markdown=lambda h, u: long_md,
+                                 pdf_to_text=lambda b: "PDF TEXT")
+    if meta["fulltext_source"] != "html" or "Full paper text." not in md or "PDF TEXT" in md:
+        c2.append("HTML path not used")
+    if sleeps != [3.0]:
+        c2.append(f"pacing sleeps={sleeps} (expected one 3.0 s pause between 2 requests)")
+    cl = axx.ArxivClient(http_get=make_get(404, 200), sleep=lambda _s: None)
+    md, meta = axx.extract_paper(cl, "1706.03762", html_to_markdown=lambda h, u: long_md,
+                                 pdf_to_text=lambda b: "PDF TEXT " * 50)
+    if meta["fulltext_source"] != "pdf" or "no HTML version (HTTP 404)" not in md or "formulas and tables may be garbled" not in md:
+        c2.append("PDF fallback not used or not stated")
+    cl = axx.ArxivClient(http_get=make_get(404, 404), sleep=lambda _s: None)
+    md, meta = axx.extract_paper(cl, "1706.03762", html_to_markdown=lambda h, u: "", pdf_to_text=lambda b: "")
+    if meta["fulltext_source"] != "none" or "FULL TEXT NOT EXTRACTED" not in md or "dominant sequence transduction" not in md:
+        c2.append("abstract-only case not stated")
+    check(2, c2)
+
+    # 3 (real trafilatura)
+    c3 = []
+    md, meta = wbx.extract_article("https://blog.example.com/agents", fetch=lambda u: _ARTICLE_HTML)
+    if "Running agents in production needs evaluation" not in md or "context layers" not in md:
+        c3.append("main text missing")
+    if "Cookie settings" in md or "Subscribe" in md:
+        c3.append("nav/footer not removed")
+    if "Agents in production" not in meta["title"] or "Jane Doe" not in md:
+        c3.append(f"metadata title={meta['title']!r}")
+    try:
+        wbx.extract_article("https://x.example/", fetch=lambda u: "<html><body><p>tiny</p></body></html>")
+        c3.append("too-short page did not raise")
+    except wbx.WebError:
+        pass
+    check(3, c3)
+
+    # 4 + 5
+    c4, c5 = [], []
+    with tempfile.TemporaryDirectory() as tds:
+        kb = Path(tds)
+        (kb / "kb" / "full").mkdir(parents=True)
+        for st in ("Paper [arxiv-1706.03762]", "Post [web-33e31ed646]"):
+            (kb / "kb" / "full" / f"{st}.md").write_text("body", encoding="utf-8")
+        ts = "2026-11-23T10:00:00+00:00"
+        data = {"arxiv:1706.03762": {"status": "extracted", "kind": "arxiv_paper", "title": "Paper", "ts": ts,
+                                     "stem": "Paper [arxiv-1706.03762]", "source_url": "u",
+                                     "full_paths": {"md": "kb/full/Paper [arxiv-1706.03762].md"}},
+                "web:33e31ed646": {"status": "extracted", "kind": "web_article", "title": "Post", "ts": ts,
+                                   "stem": "Post [web-33e31ed646]", "source_url": "u",
+                                   "full_paths": {"md": "kb/full/Post [web-33e31ed646].md"}}}
+        kt = {"arxiv_paper": (PKG / "synth" / "manual_prompt_paper.md").read_text(encoding="utf-8"),
+              "web_article": (PKG / "synth" / "manual_prompt_article.md").read_text(encoding="utf-8")}
+        build_pack(data, kb_dir=kb, template="VIDEO {{TRANSCRIPT}}", kind_templates=kt)
+        pp = (kb / "kb" / "prompts" / "Paper [arxiv-1706.03762].prompt.md").read_text(encoding="utf-8")
+        ap = (kb / "kb" / "prompts" / "Post [web-33e31ed646].prompt.md").read_text(encoding="utf-8")
+        if "Summarise this research paper" not in pp or "Summarise this article" not in ap or "VIDEO" in pp + ap:
+            c4.append("kind templates not applied")
+        dg = build_digest(data, kb, days=7, now=datetime(2026, 11, 24, tzinfo=timezone.utc))
+        if "| arXiv | Paper |" not in dg or "| Web | Post |" not in dg:
+            c5.append("digest kind labels wrong")
+    check(4, c4)
+    check(5, c5)
+
+    if verbose:
+        print(f"  papers -> {passed}/5 checks ok")
+    return passed, 5, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
@@ -784,6 +919,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "pack": suite_pack,
     "github": suite_github,
     "digest": suite_digest,
+    "papers": suite_papers,
 }
 
 

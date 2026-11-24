@@ -60,7 +60,7 @@ def build_digest(data: Dict[str, Dict[str, Any]], kb_dir: Path, *, days: int, no
         rel_full = full.get("txt") or full.get("md") or next(iter(full.values()), "")
         stem = e.get("stem") or Path(rel_full).stem
         has_summary = (kb_dir / highlights_rel / f"{stem}.md").exists()
-        rows.append({"ts": ts.strftime("%Y-%m-%d"), "kind": "GitHub" if e.get("kind") == "github_repo" else "YouTube",
+        rows.append({"ts": ts.strftime("%Y-%m-%d"), "kind": {"github_repo": "GitHub", "arxiv_paper": "arXiv", "web_article": "Web"}.get(e.get("kind") or "", "YouTube"),
                      "title": (e.get("title") or stem).replace("|", "\\|"), "url": e.get("source_url", ""),
                      "full": rel_full[3:] if rel_full.startswith("kb/") else rel_full,
                      "prompt": f"{prompts_rel[3:] if prompts_rel.startswith('kb/') else prompts_rel}/{stem}.prompt.md",
