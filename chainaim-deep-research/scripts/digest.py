@@ -37,6 +37,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT))
 
 from orchestrate import load_config, resolve_paths  # noqa: E402
+from build_kb_pack import summary_status           # noqa: E402
 
 
 def _parse_ts(value: str) -> Optional[datetime]:
@@ -59,12 +60,12 @@ def build_digest(data: Dict[str, Dict[str, Any]], kb_dir: Path, *, days: int, no
         full = (e.get("full_paths") or {})
         rel_full = full.get("txt") or full.get("md") or next(iter(full.values()), "")
         stem = e.get("stem") or Path(rel_full).stem
-        has_summary = (kb_dir / highlights_rel / f"{stem}.md").exists()
+        status = summary_status(kb_dir / highlights_rel / f"{stem}.md")
         rows.append({"ts": ts.strftime("%Y-%m-%d"), "kind": {"github_repo": "GitHub", "arxiv_paper": "arXiv", "web_article": "Web"}.get(e.get("kind") or "", "YouTube"),
                      "title": (e.get("title") or stem).replace("|", "\\|"), "url": e.get("source_url", ""),
                      "full": rel_full[3:] if rel_full.startswith("kb/") else rel_full,
                      "prompt": f"{prompts_rel[3:] if prompts_rel.startswith('kb/') else prompts_rel}/{stem}.prompt.md",
-                     "summary": "yes" if has_summary else "no"})
+                     "summary": {"ok": "yes", "check": "CHECK", "missing": "no"}[status]})
     rows.sort(key=lambda r: (r["ts"], r["title"].lower()), reverse=True)
     iso = now.isocalendar()
     done = sum(1 for r in rows if r["summary"] == "yes")

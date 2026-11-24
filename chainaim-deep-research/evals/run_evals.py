@@ -512,7 +512,7 @@ def suite_pack(fixtures: Path, verbose: bool) -> Result:
         (full / f"{s1}.txt").write_text(t1, encoding="utf-8")
         (full / "BBBBBBBBBBB.txt").write_text("plain transcript", encoding="utf-8")
         (kb / "kb" / "highlights").mkdir(parents=True)
-        (kb / "kb" / "highlights" / "BBBBBBBBBBB.md").write_text("# my summary", encoding="utf-8")
+        (kb / "kb" / "highlights" / "BBBBBBBBBBB.md").write_text("**TL;DR** " + "real summary text. " * 20, encoding="utf-8")
         data = {
             "AAAAAAAAAAA": {"source_url": "https://www.youtube.com/watch?v=AAAAAAAAAAA", "status": "extracted",
                             "full_paths": {"txt": f"kb/full/{s1}.txt"}, "title": "Design: Claude Code", "stem": s1},
@@ -544,12 +544,14 @@ def suite_pack(fixtures: Path, verbose: bool) -> Result:
         # 2
         c2 = []
         idx = (kb / "kb" / "INDEX.md").read_text(encoding="utf-8")
-        if "2 transcripts \u00b7 1 summaries saved." not in idx:
+        if "2 sources - 1 summaries OK - 0 to check - 1 missing." not in idx:
             c2.append("counts line wrong")
-        if f"[prompt](<prompts/{s1}.prompt.md>)" not in idx or "[\u2705 summary](<highlights/BBBBBBBBBBB.md>)" not in idx:
+        if f"[prompt](<prompts/{s1}.prompt.md>)" not in idx or "[OK](<highlights/BBBBBBBBBBB.md>)" not in idx:
             c2.append("links wrong")
         if "Design: Claude Code" not in idx:
             c2.append("title missing")
+        if any(ord(ch) > 127 for ch in idx.replace("Design: Claude Code", "")):
+            c2.append("INDEX.md contains non-ASCII symbols")
         check(2, c2)
         # 3
         c3 = []
@@ -568,9 +570,23 @@ def suite_pack(fixtures: Path, verbose: bool) -> Result:
             c4.append("missing entry not reported on write run")
         check(4, c4)
 
+    # 5. PR-8 summary_status: ok / check (short or pasted command) / missing
+    from build_kb_pack import summary_status
+    c5 = []
+    with tempfile.TemporaryDirectory() as tds2:
+        d2 = Path(tds2)
+        (d2 / "good.md").write_text("**TL;DR** " + "a real summary sentence. " * 20, encoding="utf-8")
+        (d2 / "cmd.md").write_text('$P=Get-ChildItem "x"; ' + "if (-not $P) { } " * 30, encoding="utf-8")
+        (d2 / "short.md").write_text("ok", encoding="utf-8")
+        got = (summary_status(d2 / "good.md"), summary_status(d2 / "cmd.md"),
+               summary_status(d2 / "short.md"), summary_status(d2 / "none.md"))
+        if got != ("ok", "check", "check", "missing"):
+            c5.append(f"statuses={got}")
+    check(5, c5)
+
     if verbose:
-        print(f"  pack -> {passed}/4 checks ok")
-    return passed, 4, fails
+        print(f"  pack -> {passed}/5 checks ok")
+    return passed, 5, fails
 
 
 def suite_github(fixtures: Path, verbose: bool) -> Result:
@@ -743,7 +759,7 @@ def suite_digest(fixtures: Path, verbose: bool) -> Result:
     with tempfile.TemporaryDirectory() as tds:
         kb = Path(tds)
         (kb / "kb" / "highlights").mkdir(parents=True)
-        (kb / "kb" / "highlights" / "New Video [AAAAAAAAAAA].md").write_text("sum", encoding="utf-8")
+        (kb / "kb" / "highlights" / "New Video [AAAAAAAAAAA].md").write_text("**TL;DR** " + "summary. " * 40, encoding="utf-8")
         data = {
             "AAAAAAAAAAA": {"status": "extracted", "ts": "2026-11-22T10:00:00+00:00", "title": "New Video",
                             "stem": "New Video [AAAAAAAAAAA]", "source_url": "https://www.youtube.com/watch?v=AAAAAAAAAAA",

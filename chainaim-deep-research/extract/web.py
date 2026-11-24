@@ -32,6 +32,16 @@ class WebError(Exception):
     pass
 
 
+def import_trafilatura():
+    """Import trafilatura without the harmless urllib3 'SOCKS support ... PySocks' warning
+    (printed when a SOCKS proxy setting is present; downloads still work without PySocks)."""
+    import warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=r".*SOCKS support in urllib3.*")
+        import trafilatura
+    return trafilatura
+
+
 def first_url(line: str) -> Optional[str]:
     m = URL_RE.search(line)
     return m.group(0).rstrip(".,;") if m else None
@@ -51,13 +61,12 @@ def web_key(url: str) -> str:
 
 
 def default_fetch(url: str) -> Optional[str]:
-    import trafilatura  # lazy
-    return trafilatura.fetch_url(url)
+    return import_trafilatura().fetch_url(url)
 
 
 def default_extract(html: str, url: str) -> Tuple[Dict[str, str], str]:
     """Return (metadata dict, markdown main text) using trafilatura."""
-    import trafilatura  # lazy
+    trafilatura = import_trafilatura()
     doc = trafilatura.bare_extraction(html, url=url, with_metadata=True)
     meta = doc.as_dict() if doc is not None else {}
     md = trafilatura.extract(html, url=url, output_format="markdown", include_tables=True,

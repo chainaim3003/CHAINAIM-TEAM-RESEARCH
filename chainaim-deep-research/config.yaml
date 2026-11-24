@@ -27,6 +27,7 @@ output:
   highlights_dir: "kb/highlights"   # synthesized entries (relative to kb_dir) — V2+ / manual V1
   manifest: "manifest.json"         # dedupe ledger (relative to kb_dir)
   prompts_dir: "kb/prompts"         # ready-to-paste AI prompts, one per transcript (build_kb_pack.py)
+  min_summary_chars: 200            # PR-8: shorter saved summaries are flagged CHECK in INDEX.md
   prompt_template: "synth/manual_prompt.md"   # template for those prompts (relative to this package dir)
   prompt_template_repo: "synth/manual_prompt_repo.md"   # template used for GitHub repo entries (PR-5)
   prompt_templates_by_kind:         # PR-7: template per manifest kind (others use prompt_template)

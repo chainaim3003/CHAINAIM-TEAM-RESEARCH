@@ -530,6 +530,11 @@ that resumes.
 dedupe), routing in `orchestrate.py` (kinds `arxiv`, `web`), paper/article prompt templates,
 `papers` eval suite.
 
+## PR-8 (done on `dev`, tag v1.5.1) - small fixes
+VS Code tasks + `ops/add_link.ps1`; summary status OK/CHECK/missing in INDEX.md and digest
+(`output.min_summary_chars`); ASCII-only INDEX.md; README `-LiteralPath` tip; quiet trafilatura import
+(no urllib3 SOCKS warning). Moving the main KB to `Transcript\` was deferred (not confirmed).
+
 ## 7. Summary table
 
 | PR | Branch | Phase | Item | Tag | Who |
