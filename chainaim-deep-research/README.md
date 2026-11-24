@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "48/48 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "61/61 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -112,7 +112,7 @@ uv run evals/run_evals.py            # or: --only classify --verbose
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--fixtures DIR` | `evals/fixtures` | fixtures directory (classify cases live here) |
-| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `pack` \| `github` \| `digest` |
+| `--only NAME` | all | run one suite: `classify` \| `ingest` \| `extract` \| `dedupe` \| `manifest` \| `naming` \| `rename` \| `pack` \| `github` \| `digest` \| `papers` |
 | `--verbose` | off | print each case, not just the summary |
 
 > The evals are self-contained: the `ingest`/`extract`/`dedupe` suites build their own
@@ -178,6 +178,28 @@ subfolders). Every cut (too many paths, oversized file, size cap) is stated in t
   only repos whose latest commit changed.
 - Limits in `config.yaml` → `github:` (`max_repos`, `max_files`, `max_file_bytes`, `max_total_bytes`,
   `max_tree_entries`, `include_forks`, `include_archived`, `min_delay_s`, `min_remaining`, `timeout_s`).
+
+## arXiv papers and web articles (PR-7, no AI)
+Put them in the same source list:
+```
+https://arxiv.org/abs/1706.03762          # also /pdf/, /html/, vN versions, "arXiv:1706.03762", old ids like hep-th/9901001
+https://www.example.com/some-article      # any other http(s) link = web article
+```
+- **arXiv** -> `kb/full/<Paper title> [arxiv-<id>].md`: title, authors, dates, categories, links,
+  abstract and the FULL TEXT (arXiv's HTML version via trafilatura; if there is none, the PDF via
+  pypdf — PDF text may garble formulas/tables, and the file says so). Free arXiv API, paced at
+  1 request / 3 s as arXiv's API terms require. All versions of a paper dedupe to one entry.
+- **Web** -> `kb/full/<Article title> [web-<hash>].md`: title, site, author, date, URL and the MAIN
+  text (menus, ads, footers removed) via trafilatura. Tracking parameters (utm_*, fbclid, ...) and
+  `#fragments` are ignored, so the same article is saved once. Pages that need JavaScript, a login or
+  a paywall fail with a clear reason instead of saving an empty file.
+- `build_kb_pack.py` writes a paper prompt (`synth/manual_prompt_paper.md`) or article prompt
+  (`synth/manual_prompt_article.md`); the weekly digest labels them arXiv / Web.
+- Config: `arxiv:` (`min_delay_s`, `timeout_s`, `max_chars`, `min_fulltext_chars`), `web:` (`min_chars`,
+  `max_chars`), `output.prompt_templates_by_kind`. New dependencies: `trafilatura`, `pypdf` (installed
+  automatically by `uv run`).
+- Any line that contains a URL but is not YouTube/GitHub/arXiv is now treated as a web article
+  (before PR-7 such lines were skipped as "unknown").
 
 ## Automation: nightly + weekly (PR-6, Windows Task Scheduler, no AI)
 Scripts live in `ops/` at the repo root (Windows PowerShell 5.1 compatible):

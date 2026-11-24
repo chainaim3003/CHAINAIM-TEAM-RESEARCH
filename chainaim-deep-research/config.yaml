@@ -29,6 +29,10 @@ output:
   prompts_dir: "kb/prompts"         # ready-to-paste AI prompts, one per transcript (build_kb_pack.py)
   prompt_template: "synth/manual_prompt.md"   # template for those prompts (relative to this package dir)
   prompt_template_repo: "synth/manual_prompt_repo.md"   # template used for GitHub repo entries (PR-5)
+  prompt_templates_by_kind:         # PR-7: template per manifest kind (others use prompt_template)
+    github_repo: "synth/manual_prompt_repo.md"
+    arxiv_paper: "synth/manual_prompt_paper.md"
+    web_article: "synth/manual_prompt_article.md"
   formats: ["txt"]                  # extracted formats to write: any of txt, md, json
   # PR-2 file naming. "title_id" -> "<Title> [<id>].txt" (title from YouTube oEmbed, free, no key;
   # falls back to "<id>" with a warning if the lookup fails). "id" -> "<id>.txt" (no lookup).
@@ -51,6 +55,19 @@ github:
   min_delay_s: 0.5                  # pause between GitHub API calls
   min_remaining: 5                  # stop before the rate limit is fully used
   timeout_s: 20
+
+arxiv:
+  # PR-7: arXiv links -> kb/full/<title> [arxiv-<id>].md (no AI). Metadata via the free export API,
+  # full text via arXiv's HTML version, else the PDF. arXiv API terms: max 1 request per 3 seconds.
+  min_delay_s: 3.0
+  timeout_s: 30
+  max_chars: 400000                 # full-text cap (cut is stated in the file)
+  min_fulltext_chars: 2000          # HTML shorter than this -> fall back to the PDF
+
+web:
+  # PR-7: any other http(s) link -> kb/full/<title> [web-<hash>].md (main text via trafilatura, no AI).
+  min_chars: 300                    # less main text than this = failure (JS/login/paywall page)
+  max_chars: 300000
 
 youtube:
   # In-repo skill, vendored under <repo>/agent-skills. RELATIVE to THIS package dir

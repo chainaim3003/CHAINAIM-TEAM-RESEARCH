@@ -524,6 +524,12 @@ that resumes.
 
 ---
 
+## PR-7 (done on `dev`, tag v1.5.0) — arXiv papers + web articles, AI-free
+`extract/arxiv.py` (export API metadata; full text from arXiv HTML via trafilatura, else PDF via pypdf;
+1 request / 3 s), `extract/web.py` (trafilatura main text + metadata; tracking params stripped for
+dedupe), routing in `orchestrate.py` (kinds `arxiv`, `web`), paper/article prompt templates,
+`papers` eval suite.
+
 ## 7. Summary table
 
 | PR | Branch | Phase | Item | Tag | Who |

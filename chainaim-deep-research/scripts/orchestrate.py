@@ -54,6 +54,9 @@ from extract.metadata import fetch_youtube_title  # noqa: E402
 from naming import DEFAULT_MAX_LEN, safe_stem     # noqa: E402
 from envfile import load_env_file                 # noqa: E402
 from extract import github as gh                  # noqa: E402
+from extract import arxiv as ax                   # noqa: E402
+from extract import web as wb                     # noqa: E402
+from manifest import content_hash                 # noqa: E402
 
 
 # ----- Router / classify (contract s4: classify(line) -> (kind, key)) -----
@@ -75,11 +78,18 @@ _GH_RESERVED = {"orgs", "settings", "topics", "marketplace", "features", "about"
                 "apps", "enterprise", "trending", "site", "security", "customer-stories"}
 
 
+# arXiv (PR-7): arxiv.org/abs|pdf|html/<id>[vN][.pdf], "arXiv:<id>" and manifest keys "arxiv:<id>".
+# The version suffix is dropped so every version of a paper dedupes to one entry.
+_ARXIV = re.compile(rf"(?:arxiv\.org/(?:abs|pdf|html)/|\barxiv:\s*)({ax.NEW_ID}|{ax.OLD_ID})(?:v\d+)?", re.I)
+
+
 def classify(line: str) -> Tuple[str, Optional[str]]:
     """Classify a raw source line. Returns (kind, key).
 
     Kinds: "youtube" (key = 11-char video id), "github_repo" (key = "gh:<owner>/<repo>"),
-    "github_account" (key = "gh:<owner>"). Anything else -> ("unknown", None), skipped with a note.
+    "github_account" (key = "gh:<owner>"), "arxiv" (key = "arxiv:<id>"), "web" (any other
+    http(s) URL; key = "web:<10-hex hash of the normalized URL>"). Lines without a URL ->
+    ("unknown", None), skipped with a note.
     """
     s = line.strip()
     for pat in _YT_PATTERNS:
@@ -94,6 +104,12 @@ def classify(line: str) -> Tuple[str, Optional[str]]:
             if repo:
                 return "github_repo", f"gh:{owner}/{repo}"
         return "github_account", f"gh:{owner}"
+    m = _ARXIV.search(s)
+    if m:
+        return "arxiv", f"arxiv:{m.group(1)}"
+    url = wb.first_url(s)
+    if url:
+        return "web", wb.web_key(url)
     return "unknown", None
 
 
@@ -110,6 +126,9 @@ def canonical_url(kind: str, key: str) -> str:
         return f"https://www.youtube.com/watch?v={key}"
     if kind in ("github_repo", "github_account"):
         return f"https://github.com/{key[3:]}"
+    if kind == "arxiv":
+        return f"https://arxiv.org/abs/{key[6:]}"
+    # "web" keys are hashes; the URL itself comes from the source line (see plan_url()).
     raise ValueError(f"no canonical URL rule for kind '{kind}'")
 
 
@@ -212,7 +231,7 @@ def run(args: argparse.Namespace) -> int:
 
     for item in items:
         kind, key = classify(item["url"])
-        if kind not in ("youtube", "github_repo", "github_account") or not key:
+        if kind not in ("youtube", "github_repo", "github_account", "arxiv", "web") or not key:
             skipped_unknown.append(item["url"])
             continue
         refresh = False
@@ -224,17 +243,20 @@ def run(args: argparse.Namespace) -> int:
                 continue
         # url  = canonical link (stored as manifest source_url and passed to the extractor)
         # line = the original input line, kept verbatim as manifest source_line (audit trail)
-        planned.append({"kind": kind, "key": key, "url": canonical_url(kind, key),
-                        "line": item["url"], "refresh": refresh})
+        url = wb.normalize_url(wb.first_url(item["url"]) or "") if kind == "web" else canonical_url(kind, key)
+        planned.append({"kind": kind, "key": key, "url": url, "line": item["url"], "refresh": refresh})
         if args.max_videos is not None and len(planned) >= args.max_videos:
             break
 
     n_yt = sum(1 for p in planned if p["kind"] == "youtube")
-    n_gh = len(planned) - n_yt
+    n_gh = sum(1 for p in planned if p["kind"].startswith("github"))
+    n_ax = sum(1 for p in planned if p["kind"] == "arxiv")
+    n_web = sum(1 for p in planned if p["kind"] == "web")
     print(f"== ChainAIM ==  ingest={len(items)}  youtube_new={n_yt}  github_new={n_gh}  "
+          f"arxiv_new={n_ax}  web_new={n_web}  "
           f"dedupe_skipped={skipped_dedupe}  unknown_skipped={len(skipped_unknown)}  naming={naming}")
     if skipped_unknown:
-        print("  unknown (not YouTube or GitHub; skipped):")
+        print("  unknown (no URL found; skipped):")
         for u in skipped_unknown[:10]:
             print(f"    - {u}")
 
@@ -251,7 +273,21 @@ def run(args: argparse.Namespace) -> int:
 
     gh_client: Optional[gh.GitHubClient] = None
     gh_stopped = False
+    ax_client: Optional[ax.ArxivClient] = None
     for p in planned:
+        if p["kind"] in ("arxiv", "web"):
+            if p["kind"] == "arxiv" and ax_client is None:
+                ax_cfg = cfg.get("arxiv", {})
+                ax_client = ax.ArxivClient(timeout_s=float(ax_cfg.get("timeout_s", 30)),
+                                           min_delay_s=float(ax_cfg.get("min_delay_s", 3.0)))
+            ok = _run_doc_item(p, ax_client, cfg, manifest, paths, max_stem_len)
+            ledger.add(free_tool_calls=1)
+            if ok is True:
+                extracted += 1
+                ledger.add(items_processed=1)
+            else:
+                failed.append((p["key"], ok))
+            continue
         if p["kind"] != "youtube":
             if gh_stopped:
                 failed.append((p["key"], "skipped: GitHub rate limit reached earlier in this run"))
@@ -393,6 +429,42 @@ def _run_github_item(p: Dict, client: "gh.GitHubClient", gh_cfg: dict, manifest:
         done += 1
         print(f"  [ok] {item['key']} -> {rel}")
     return done, failures, False
+
+
+def _run_doc_item(p: Dict, client: Optional["ax.ArxivClient"], cfg: dict, manifest: Manifest,
+                  paths: Dict[str, Path], max_stem_len: int):
+    """Extract one arXiv paper or web article (PR-7, no AI). Returns True or an error string."""
+    try:
+        if p["kind"] == "arxiv":
+            ax_cfg = cfg.get("arxiv", {})
+            arxiv_id = p["key"][6:]
+            md, meta = ax.extract_paper(client, arxiv_id,
+                                        max_chars=int(ax_cfg.get("max_chars", 400_000)),
+                                        min_fulltext_chars=int(ax_cfg.get("min_fulltext_chars", 2_000)))
+            stem = safe_stem(meta["title"], f"arxiv-{ax.file_id(arxiv_id)}", max_len=max_stem_len)
+            kind = "arxiv_paper"
+            extra = f" (full text: {meta['fulltext_source']})"
+        else:
+            w_cfg = cfg.get("web", {})
+            md, meta = wb.extract_article(p["url"], min_chars=int(w_cfg.get("min_chars", 300)),
+                                          max_chars=int(w_cfg.get("max_chars", 300_000)))
+            stem = safe_stem(meta["title"], "web-" + p["key"][4:], max_len=max_stem_len)
+            kind = "web_article"
+            extra = ""
+    except (ax.ArxivError, wb.WebError) as exc:
+        print(f"  [FAIL] {p['key']}: {exc}")
+        return str(exc)
+    paths["full_dir"].mkdir(parents=True, exist_ok=True)
+    target = paths["full_dir"] / f"{stem}.md"
+    target.write_text(md, encoding="utf-8")
+    try:
+        rel = target.relative_to(paths["kb_dir"]).as_posix()
+    except ValueError:
+        rel = target.as_posix()
+    manifest.record(p["key"], p["url"], content_hash(md), {"md": rel}, status="extracted",
+                    source_line=p["line"], title=meta["title"], stem=stem, kind=kind)
+    print(f"  [ok] {p['key']} -> {rel}{extra}")
+    return True
 
 
 def build_parser() -> argparse.ArgumentParser:
