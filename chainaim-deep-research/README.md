@@ -186,6 +186,12 @@ GitHub, arXiv or article; separate several with spaces). It runs `ops/add_link.p
 all inside `Transcript\`. Also available: **Research: run nightly now** and **Research: weekly digest now**.
 From a terminal: `powershell -NoProfile -ExecutionPolicy Bypass -File ops\add_link.ps1 -Link "<url>"`.
 
+## New PC setup (PR-10)
+One command installs and configures everything on Windows (git + uv if missing, clone, packages,
+`Transcript\`, tests, scheduled tasks, an end-to-end link test, VS Code). See the repo-root
+[SETUP.md](../SETUP.md) (what you will see at each step) and [CMD.md](../CMD.md) (every command).
+Script: `ops/setup.ps1` (`-DryRun`, `-InstallDir`, `-NightlyAt`, `-SkipTasks`, `-Uninstall`, ...).
+
 ## Local app (PR-9, no AI)
 A small browser page for everything above, on this computer only (`http://127.0.0.1:8501`).
 Start: VS Code `Ctrl+Shift+P` -> **Tasks: Run Task** -> **Research: open app**, or

@@ -29,3 +29,6 @@ kb_backup_*/
 
 # Local PR-body drafts used with `gh pr create --body-file .pr/<PR-ID>.md`.
 .pr/
+
+# PR-10: each person's own knowledge base (links, transcripts, prompts, summaries) stays local.
+Transcript/

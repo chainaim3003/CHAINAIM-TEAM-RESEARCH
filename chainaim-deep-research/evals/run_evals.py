@@ -1081,6 +1081,100 @@ def suite_app(fixtures: Path, verbose: bool) -> Result:
     return passed, 6, fails
 
 
+def _ps_params(text: str) -> List[str]:
+    """Parameter names declared in the first param(...) block of a PowerShell script."""
+    import re
+    m = re.search(r"\bparam\s*\((.*?)\)\s*\n\s*\$ErrorActionPreference", text, re.S | re.I)
+    return re.findall(r"\$([A-Za-z]+)", m.group(1)) if m else []
+
+
+def suite_setup(fixtures: Path, verbose: bool) -> Result:
+    """PR-10: one-command setup. STATIC checks only (CI is Linux and must not install software;
+    the real run is done on Windows - see .pr/PR-10.md). 5 checks:
+      1. every setup.ps1 parameter is documented (.PARAMETER) and in CMD.md's options/usage.
+      2. scripts setup.ps1 calls exist and declare every parameter setup.ps1 passes to them.
+      3. the one-line command is identical in setup.ps1, README.md, SETUP.md, CMD.md and points at
+         main/ops/setup.ps1 of the clone URL setup.ps1 uses.
+      4. VS Code tasks named in the docs exist in .vscode/tasks.json.
+      5. Transcript/ is git-ignored, uv.lock exists (setup uses `uv sync --frozen`).
+    """
+    import re
+    repo = PKG.parent
+    checks: List[List[str]] = []
+    setup = (repo / "ops" / "setup.ps1").read_text(encoding="utf-8")
+    cmd_md = (repo / "CMD.md").read_text(encoding="utf-8")
+    params = _ps_params(setup)
+
+    c: List[str] = []
+    if len(params) < 15:
+        c.append(f"param block not parsed ({params})")
+    for prm in params:
+        if f".PARAMETER {prm}" not in setup:
+            c.append(f"-{prm} has no .PARAMETER help")
+        if prm not in ("RepoUrl", "Branch", "TestLink") and f"-{prm}" not in cmd_md:
+            c.append(f"-{prm} missing from CMD.md")
+    checks.append(c)
+
+    c = []
+    calls = {"register_tasks.ps1": ["KbDir", "SourceList", "SourceDir", "NightlyAt", "WeeklyDay", "WeeklyAt", "Unregister"],
+             "add_link.ps1": ["Link", "KbDir", "SourceList"]}
+    for script, needed in calls.items():
+        f = repo / "ops" / script
+        if not f.exists():
+            c.append(f"{script} missing")
+            continue
+        declared = _ps_params(f.read_text(encoding="utf-8"))
+        for n in needed:
+            if f'"-{n}"' not in setup:
+                c.append(f"setup.ps1 no longer passes -{n} to {script} (update this check)")
+            if n not in declared:
+                c.append(f"{script} does not declare -{n}")
+    if not (repo / "agent-skills/skills/youtube-transcript/scripts/get_transcript.py").exists():
+        c.append("youtube transcript tool path used by setup.ps1 missing")
+    checks.append(c)
+
+    c = []
+    url = re.search(r'\$RepoUrl = "https://github\.com/([^"]+?)\.git"', setup)
+    one = None
+    if not url:
+        c.append("RepoUrl default not found")
+    else:
+        one = (f"irm https://raw.githubusercontent.com/{url.group(1)}/main/ops/setup.ps1 -OutFile $env:TEMP\\setup.ps1; "
+               "powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\\setup.ps1")
+        for doc in ("ops/setup.ps1", "README.md", "SETUP.md", "CMD.md"):
+            if one not in (repo / doc).read_text(encoding="utf-8"):
+                c.append(f"one-line command missing or different in {doc}")
+    checks.append(c)
+
+    c = []
+    tasks = (repo / ".vscode" / "tasks.json").read_text(encoding="utf-8")
+    labels = set(re.findall(r'"label"\s*:\s*"([^"]+)"', tasks))
+    docs = cmd_md + (repo / "SETUP.md").read_text(encoding="utf-8") + setup
+    for named in set(re.findall(r"Research: [a-z ]+[a-z]", docs)):
+        if named not in labels:
+            c.append(f"docs name a VS Code task that does not exist: {named}")
+    checks.append(c)
+
+    c = []
+    gi = (repo / ".gitignore").read_text(encoding="utf-8").splitlines()
+    if "Transcript/" not in [l.strip() for l in gi]:
+        c.append("Transcript/ not git-ignored")
+    if not (PKG / "uv.lock").exists() or '"sync", "--frozen"' not in setup:
+        c.append("uv.lock / uv sync --frozen mismatch")
+    checks.append(c)
+
+    fails: List[str] = []
+    passed = 0
+    for n, c in enumerate(checks, 1):
+        if c:
+            fails.extend(f"setup {n}: {m}" for m in c)
+        else:
+            passed += 1
+    if verbose:
+        print(f"  setup -> {passed}/5 static checks ok")
+    return passed, 5, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
@@ -1094,6 +1188,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "digest": suite_digest,
     "papers": suite_papers,
     "app": suite_app,
+    "setup": suite_setup,
 }
 
 
