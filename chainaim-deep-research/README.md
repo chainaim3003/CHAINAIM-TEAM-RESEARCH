@@ -186,6 +186,21 @@ GitHub, arXiv or article; separate several with spaces). It runs `ops/add_link.p
 all inside `Transcript\`. Also available: **Research: run nightly now** and **Research: weekly digest now**.
 From a terminal: `powershell -NoProfile -ExecutionPolicy Bypass -File ops\add_link.ps1 -Link "<url>"`.
 
+## Local app (PR-9, no AI)
+A small browser page for everything above, on this computer only (`http://127.0.0.1:8501`).
+Start: VS Code `Ctrl+Shift+P` -> **Tasks: Run Task** -> **Research: open app**, or
+`powershell -NoProfile -ExecutionPolicy Bypass -File ops\run_app.ps1` (flags: `-Port 8502`, `-NoBrowser`,
+`-KbDir <folder>`). Stop with `Ctrl+C`. First start can take a minute while uv installs Streamlit.
+- **Add links** - paste links, one per line -> added to `<KB>\links.txt`, extracted, prompts + INDEX refreshed.
+- **Library** - search / filter by type and summary status; copy the prompt (copy icon), download the
+  prompt, extracted text or summary.
+- **Save summary** - pick the item, paste the AI's answer, **Save summary** -> `kb/highlights/<name>.md`.
+  Empty text is refused; short or command-like text needs "Save anyway" (same OK/CHECK rule as INDEX.md).
+- **Runs & digest** - make the weekly digest now, see scheduled-task status and recent logs.
+The sidebar switches between `Transcript\` (default) and the main KB from `config.yaml`. The app uses the
+same scripts and the same `pipeline.lock` as the scheduled tasks, so runs never overlap. Logic lives in
+`app/services.py` (tested by `uv run evals/run_evals.py --only app`); `app/streamlit_app.py` is only the page.
+
 ## Saved summaries: OK / CHECK (PR-8)
 `kb/INDEX.md` and the weekly digest mark each saved summary:
 - **OK** - `kb/highlights/<name>.md` exists and looks like a real answer;

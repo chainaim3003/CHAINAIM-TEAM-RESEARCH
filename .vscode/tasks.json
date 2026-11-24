@@ -33,6 +33,16 @@
                "-KbDir", "${workspaceFolder}\\Transcript"],
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Research: open app",
+      "detail": "PR-9: local app at http://127.0.0.1:8501 - add links, library, save summaries, digest (no AI)",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\ops\\run_app.ps1"],
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
     }
   ],
   "inputs": [

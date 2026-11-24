@@ -535,6 +535,13 @@ VS Code tasks + `ops/add_link.ps1`; summary status OK/CHECK/missing in INDEX.md 
 (`output.min_summary_chars`); ASCII-only INDEX.md; README `-LiteralPath` tip; quiet trafilatura import
 (no urllib3 SOCKS warning). Moving the main KB to `Transcript\` was deferred (not confirmed).
 
+## PR-9 (done on `dev`, tag v2.0.0) - local app, AI-free
+Streamlit page on 127.0.0.1 (`ops/run_app.ps1`, VS Code task "Research: open app"): Add links, Library
+(search/filter, copy/download prompt, text, summary), Save summary (validated, OK/CHECK rule), Runs &
+digest (digest now, scheduled-task status, logs). Logic in `app/services.py`; reuses the existing scripts
+and `pipeline.lock`. `app` eval suite (services + Streamlit AppTest smoke test). Dependency
+`streamlit>=1.40` (uv resolves 1.65.0 on Python 3.10, 1.67.0 on 3.11+).
+
 ## 7. Summary table
 
 | PR | Branch | Phase | Item | Tag | Who |

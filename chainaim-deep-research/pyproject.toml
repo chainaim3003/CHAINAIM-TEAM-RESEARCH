@@ -9,6 +9,8 @@ dependencies = [
     "trafilatura>=2.0",
     # PR-7 (no AI): text from arXiv PDFs when no HTML version exists
     "pypdf>=5.0",
+    # PR-9 (no AI): local browser app (app/streamlit_app.py), served on 127.0.0.1 only
+    "streamlit>=1.40",
 ]
 
 # Optional: only needed if you run the API provider (provider=api). V1 + subscription
