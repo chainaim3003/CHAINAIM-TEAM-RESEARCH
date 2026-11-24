@@ -1,0 +1,45 @@
+{
+  // PR-8: VS Code tasks for the research agent (no AI).
+  // Run with: Ctrl+Shift+P -> "Tasks: Run Task" -> pick one below.
+  // Paths are resolved by the scripts from their own location, so this works from the repo root workspace.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Research: add link",
+      "detail": "Paste a YouTube / GitHub / arXiv / article link -> transcript/extract + prompt in Transcript\\kb",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\ops\\add_link.ps1", "-Link", "${input:link}"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Research: run nightly now",
+      "detail": "Process every new link in Transcript\\links.txt and refresh prompts + INDEX.md",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\ops\\run_nightly.ps1",
+               "-KbDir", "${workspaceFolder}\\Transcript", "-SourceList", "${workspaceFolder}\\Transcript\\links.txt",
+               "-SourceDir", "${workspaceFolder}\\Transcript\\no-such-dir"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Research: weekly digest now",
+      "detail": "Write Transcript\\kb\\digests\\<year>-W<week>.md",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\ops\\run_weekly.ps1",
+               "-KbDir", "${workspaceFolder}\\Transcript"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "link",
+      "type": "promptString",
+      "description": "Link(s) to add - YouTube, GitHub repo/account, arXiv, or web article (separate several with spaces)"
+    }
+  ]
+}

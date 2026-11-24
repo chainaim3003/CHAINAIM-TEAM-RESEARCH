@@ -60,8 +60,8 @@ def default_http_get(url: str, timeout_s: float) -> Tuple[int, bytes]:
 
 
 def default_html_to_markdown(html: str, url: str) -> str:
-    import trafilatura  # lazy: only needed for arXiv/web items
-    return trafilatura.extract(html, url=url, output_format="markdown", include_tables=True,
+    from extract.web import import_trafilatura  # lazy + quiet (no SOCKS warning)
+    return import_trafilatura().extract(html, url=url, output_format="markdown", include_tables=True,
                                with_metadata=False) or ""
 
 

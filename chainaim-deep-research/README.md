@@ -40,7 +40,7 @@ Steps 1–3 are **safe — no network, no YouTube calls, nothing persists/change
 makes **live** YouTube calls.
 
 ```bash
-# 1) EVALS — tests the code only (no config, no network). Expect: "61/61 checks passed / ALL PASS", exit 0.
+# 1) EVALS — tests the code only (no config, no network). Expect: "62/62 checks passed / ALL PASS", exit 0.
 uv run evals/run_evals.py
 
 # 2) KEY HYGIENE — confirms ANTHROPIC_API_KEY is unset (subscription mode). Expect: "guardrails: PASS".
@@ -178,6 +178,29 @@ subfolders). Every cut (too many paths, oversized file, size cap) is stated in t
   only repos whose latest commit changed.
 - Limits in `config.yaml` → `github:` (`max_repos`, `max_files`, `max_file_bytes`, `max_total_bytes`,
   `max_tree_entries`, `include_forks`, `include_archived`, `min_delay_s`, `min_remaining`, `timeout_s`).
+
+## Quick add from VS Code (PR-8)
+`Ctrl+Shift+P` -> **Tasks: Run Task** -> **Research: add link** -> paste one or more links (YouTube,
+GitHub, arXiv or article; separate several with spaces). It runs `ops/add_link.ps1`: the link is added to
+`Transcript\links.txt` (skipped if already there), extracted, and its prompt + `kb/INDEX.md` are refreshed,
+all inside `Transcript\`. Also available: **Research: run nightly now** and **Research: weekly digest now**.
+From a terminal: `powershell -NoProfile -ExecutionPolicy Bypass -File ops\add_link.ps1 -Link "<url>"`.
+
+## Saved summaries: OK / CHECK (PR-8)
+`kb/INDEX.md` and the weekly digest mark each saved summary:
+- **OK** - `kb/highlights/<name>.md` exists and looks like a real answer;
+- **CHECK** - the file exists but is very short (< `output.min_summary_chars`, default 200) or starts like a
+  pasted command (a clipboard mix-up) - open it and replace it with the AI's answer;
+- **-** - not saved yet.
+
+## PowerShell tip: file names with `[ID]`
+PowerShell treats `[...]` in a path as a wildcard, so `Get-Content "...[K2dt5UKRbeY].txt"` fails with odd
+errors (e.g. "parameter -Raw not found"). Use `-LiteralPath`, or the .NET methods:
+```powershell
+Get-Content -LiteralPath "kb\full\Title [ID].txt" -Encoding UTF8
+[IO.File]::ReadAllText("C:\...\kb\full\Title [ID].txt")
+```
+Windows PowerShell 5.1 also reads UTF-8 files as ANSI unless you add `-Encoding UTF8`.
 
 ## arXiv papers and web articles (PR-7, no AI)
 Put them in the same source list:
