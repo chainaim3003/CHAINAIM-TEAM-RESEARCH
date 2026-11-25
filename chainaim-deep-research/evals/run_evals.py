@@ -1090,13 +1090,14 @@ def _ps_params(text: str) -> List[str]:
 
 def suite_setup(fixtures: Path, verbose: bool) -> Result:
     """PR-10: one-command setup. STATIC checks only (CI is Linux and must not install software;
-    the real run is done on Windows - see .pr/PR-10.md). 5 checks:
+    the real run is done on Windows - see .pr/PR-10.md). 6 checks:
       1. every setup.ps1 parameter is documented (.PARAMETER) and in CMD.md's options/usage.
       2. scripts setup.ps1 calls exist and declare every parameter setup.ps1 passes to them.
       3. the one-line command is identical in setup.ps1, README.md, SETUP.md, CMD.md and points at
          main/ops/setup.ps1 of the clone URL setup.ps1 uses.
       4. VS Code tasks named in the docs exist in .vscode/tasks.json.
       5. Transcript/ is git-ignored, uv.lock exists (setup uses `uv sync --frozen`).
+      6. PR-11: no fixed C:\\ChainAIM install default in script or docs; -ReplaceTasks guard present.
     """
     import re
     repo = PKG.parent
@@ -1163,6 +1164,17 @@ def suite_setup(fixtures: Path, verbose: bool) -> Result:
         c.append("uv.lock / uv sync --frozen mismatch")
     checks.append(c)
 
+    # 6 (PR-11): install folder follows the user's current folder; existing tasks are protected.
+    c = []
+    if re.search(r'\$InstallDir\s*=\s*"[A-Za-z]:', setup):
+        c.append("setup.ps1 has a fixed drive-letter default for -InstallDir")
+    for doc in ("README.md", "SETUP.md", "CMD.md"):
+        if "C:\\ChainAIM\\" in (repo / doc).read_text(encoding="utf-8"):
+            c.append(f"{doc} still names C:\\ChainAIM as the install folder")
+    if "Get-Location" not in setup or "$ReplaceTasks" not in setup or "Kept them unchanged" not in setup:
+        c.append("current-folder default or existing-task guard missing in setup.ps1")
+    checks.append(c)
+
     fails: List[str] = []
     passed = 0
     for n, c in enumerate(checks, 1):
@@ -1171,8 +1183,8 @@ def suite_setup(fixtures: Path, verbose: bool) -> Result:
         else:
             passed += 1
     if verbose:
-        print(f"  setup -> {passed}/5 static checks ok")
-    return passed, 5, fails
+        print(f"  setup -> {passed}/6 static checks ok")
+    return passed, 6, fails
 
 
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {

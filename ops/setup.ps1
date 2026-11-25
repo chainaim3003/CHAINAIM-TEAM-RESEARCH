@@ -20,8 +20,10 @@
     One command for a new PC (PowerShell):
       irm https://raw.githubusercontent.com/chainaim3003/CHAINAIM-TEAM-RESEARCH/main/ops/setup.ps1 -OutFile $env:TEMP\setup.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\setup.ps1
 
-.PARAMETER InstallDir      Repo folder (default C:\ChainAIM\CHAINAIM-TEAM-RESEARCH; when this script
-                           is run from inside a cloned repo and -InstallDir is not given, that repo).
+.PARAMETER InstallDir      Repo folder. Default: <folder PowerShell is in>\CHAINAIM-TEAM-RESEARCH, so open
+                           PowerShell where you want the project. If that folder already IS a clone of
+                           this repo (or the script is run from inside one), that clone is used. A
+                           PowerShell started in C:\Windows\... falls back to your home folder.
 .PARAMETER RepoUrl         Git URL to clone (default the GitHub repo).
 .PARAMETER Branch          Branch for a new clone (default main). For an existing repo the current
                            branch is kept unless -Branch is given.
@@ -35,6 +37,8 @@
 .PARAMETER NoVSCode        Do not open VS Code at the end.
 .PARAMETER InstallVSCode   Install VS Code with winget if it is missing.
 .PARAMETER AskGithubToken  Ask for a GitHub token (hidden input) and store it in .env.
+.PARAMETER ReplaceTasks    Re-point the scheduled tasks to this copy even if they already point to
+                           another copy on this PC (without it, that step is skipped with a warning).
 .PARAMETER DryRun          Only print what would be done; change nothing.
 .PARAMETER Uninstall       Remove the two scheduled tasks (files and data are kept).
 
@@ -43,11 +47,13 @@
 .EXAMPLE
     powershell -NoProfile -ExecutionPolicy Bypass -File ops\setup.ps1 -InstallDir D:\Work\research -NightlyAt 23:00
 .EXAMPLE
+    cd D:\Work; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\setup.ps1   # installs D:\Work\CHAINAIM-TEAM-RESEARCH
+.EXAMPLE
     powershell -NoProfile -ExecutionPolicy Bypass -File ops\setup.ps1 -Uninstall
 #>
 [CmdletBinding()]
 param(
-    [string]$InstallDir = "C:\ChainAIM\CHAINAIM-TEAM-RESEARCH",
+    [string]$InstallDir,
     [string]$RepoUrl = "https://github.com/chainaim3003/CHAINAIM-TEAM-RESEARCH.git",
     [string]$Branch = "main",
     [string]$NightlyAt = "02:30",
@@ -56,7 +62,7 @@ param(
     [string]$WeeklyAt = "09:00",
     [string]$TestLink = "https://arxiv.org/abs/1706.03762",
     [switch]$SkipTests, [switch]$SkipTasks, [switch]$SkipSmokeTest,
-    [switch]$NoVSCode, [switch]$InstallVSCode, [switch]$AskGithubToken,
+    [switch]$NoVSCode, [switch]$InstallVSCode, [switch]$AskGithubToken, [switch]$ReplaceTasks,
     [switch]$DryRun, [switch]$Uninstall
 )
 $ErrorActionPreference = "Stop"
@@ -94,11 +100,23 @@ function Run-Ps([string]$Script, [string[]]$Arguments, [string]$What) {
     Run "powershell.exe" (@("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $Script) + $Arguments) $What
 }
 
-# Run from inside a cloned repo without -InstallDir -> use that repo.
-$here = Split-Path -Parent $PSScriptRoot
-if (-not $PSBoundParameters.ContainsKey("InstallDir") -and (Test-Path -LiteralPath (Join-Path $here "chainaim-deep-research\pyproject.toml"))) {
-    $InstallDir = $here
+# Where to install when -InstallDir is not given (PR-11):
+#   1. the script is inside a clone of this repo          -> that clone
+#   2. PowerShell's current folder is a clone of this repo -> that folder
+#   3. otherwise                                           -> <current folder>\CHAINAIM-TEAM-RESEARCH
+#      (a PowerShell started in C:\Windows\... uses the home folder instead)
+function Test-Repo([string]$Dir) { $Dir -and (Test-Path -LiteralPath (Join-Path $Dir "chainaim-deep-research\pyproject.toml")) }
+if (-not $InstallDir) {
+    $here = Split-Path -Parent $PSScriptRoot
+    $cwd = (Get-Location).ProviderPath
+    if (Test-Repo $here) { $InstallDir = $here }
+    elseif (Test-Repo $cwd) { $InstallDir = $cwd }
+    else {
+        if ($env:windir -and $cwd.ToLower().StartsWith($env:windir.ToLower())) { $cwd = $HOME }
+        $InstallDir = Join-Path $cwd "CHAINAIM-TEAM-RESEARCH"
+    }
 }
+$InstallDir = [IO.Path]::GetFullPath($InstallDir)
 $Pkg = Join-Path $InstallDir "chainaim-deep-research"
 $Kb = Join-Path $InstallDir "Transcript"
 $Links = Join-Path $Kb "links.txt"
@@ -224,7 +242,18 @@ try {
 
     # 8 ---------------------------------------------------------------
     Step 8 "Scheduled tasks (nightly $NightlyAt, weekly $WeeklyDay $WeeklyAt)"
+    # PR-11: one PC has ONE nightly + ONE weekly task. Never silently move them away from another copy.
+    $other = @(Get-ScheduledTask -TaskName "ChainAIM-Research-*" -ErrorAction SilentlyContinue | Where-Object {
+        $a = [string]$_.Actions[0].Arguments
+        -not $a.ToLower().Contains($Kb.ToLower())
+    })
     if ($SkipTasks) { Say "  skipped (-SkipTasks)"; Done "Scheduled tasks" "skipped" }
+    elseif ($other.Count -gt 0 -and -not $ReplaceTasks) {
+        Say "  The scheduled tasks on this PC already belong to another copy:" "Yellow"
+        foreach ($t in $other) { Say ("    {0}: {1}" -f $t.TaskName, $t.Actions[0].Arguments) "Yellow" }
+        Say "  Kept them unchanged. To move them to THIS copy, run setup again with -ReplaceTasks." "Yellow"
+        Done "Scheduled tasks" "kept (belong to another copy)"
+    }
     else {
         Run-Ps (Join-Path $InstallDir "ops\register_tasks.ps1") @(
             "-KbDir", $Kb, "-SourceList", $Links, "-SourceDir", (Join-Path $Kb "no-such-dir"),

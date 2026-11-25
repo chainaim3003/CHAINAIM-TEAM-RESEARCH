@@ -4,18 +4,23 @@ All commands are for **Windows PowerShell** (5.1 or newer). Run them in a normal
 The agent never uses AI: it fetches transcripts/text and builds prompts. You paste a prompt into
 any AI you like (Claude, Gemini, ChatGPT) and save its answer with the app.
 
-`<repo>` below means your install folder (default `C:\ChainAIM\CHAINAIM-TEAM-RESEARCH`).
+`<repo>` below means your install folder: `<the folder you ran setup in>\CHAINAIM-TEAM-RESEARCH`.
 
 ---
 
 ## 1. Set up a new PC (one command)
 
+First open PowerShell in the folder where you want the project, e.g.:
+```powershell
+cd D:\Work
+```
+Then:
 ```powershell
 irm https://raw.githubusercontent.com/chainaim3003/CHAINAIM-TEAM-RESEARCH/main/ops/setup.ps1 -OutFile $env:TEMP\setup.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\setup.ps1
 ```
 
 What it does (about 3-10 minutes the first time):
-installs git + uv if missing -> clones the repo to `C:\ChainAIM\CHAINAIM-TEAM-RESEARCH` -> installs
+installs git + uv if missing -> clones the repo to `<current folder>\CHAINAIM-TEAM-RESEARCH` -> installs
 packages -> creates `Transcript` + `links.txt` -> runs all tests -> registers the nightly and weekly
 tasks -> adds one test link end to end -> opens VS Code. It ends with **SETUP COMPLETE** and a table.
 If it stops, fix the message shown and run the same command again (finished steps are skipped).
@@ -30,6 +35,7 @@ Options (add after `setup.ps1`):
 | `-InstallVSCode` | install VS Code too if it is missing |
 | `-DryRun` | show what would happen, change nothing |
 | `-SkipTests` / `-SkipTasks` / `-SkipSmokeTest` / `-NoVSCode` | skip a step |
+| `-ReplaceTasks` | this PC already has the tasks for another copy: move them to this copy (only one copy per PC can have them) |
 | `-Uninstall` | remove the scheduled tasks (files and data are kept) |
 
 Already cloned the repo yourself? From the repo folder:
@@ -118,6 +124,7 @@ cd <repo>; powershell -NoProfile -ExecutionPolicy Bypass -File ops\setup.ps1 -Un
 | `git is missing and winget is not available` | install git from https://git-scm.com/download/win, run setup again |
 | `exists and is not empty` | choose another `-InstallDir` |
 | `Local changes found - not updating` | your edits are kept; commit or discard them, then re-run |
+| `already belong to another copy ... Kept them unchanged` | another copy on this PC owns the tasks; re-run with `-ReplaceTasks` only if THIS copy should run nightly |
 | add link exits with code 2 | another run is active; wait and try again |
 | file names with `[ID]` not found in PowerShell | use `-LiteralPath` (e.g. `Get-Content -LiteralPath "...[id].txt" -Encoding UTF8`) |
 

@@ -5,12 +5,13 @@ saves the transcript / text plus a ready-to-paste prompt. You paste the prompt i
 answer with a small local app. Nightly and weekly runs are automatic.
 
 ## Set up on a new PC (one command, Windows PowerShell)
+Open PowerShell **in the folder where you want the project** (for example `cd D:\Work`), then run:
 
 ```powershell
 irm https://raw.githubusercontent.com/chainaim3003/CHAINAIM-TEAM-RESEARCH/main/ops/setup.ps1 -OutFile $env:TEMP\setup.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\setup.ps1
 ```
 
-Installs what is missing, clones to `C:\ChainAIM\CHAINAIM-TEAM-RESEARCH`, runs the tests, registers the
+Installs what is missing, clones to `<that folder>\CHAINAIM-TEAM-RESEARCH`, runs the tests, registers the
 scheduled tasks, tests one link end to end and opens VS Code. Details and options: [SETUP.md](SETUP.md).
 
 ## Use it
