@@ -7,7 +7,11 @@
 - Optional: VS Code (add `-InstallVSCode` to install it), a GitHub token (`-AskGithubToken`).
 
 ## Run
-Open **Windows PowerShell** (Start -> type "PowerShell") and paste:
+1. Open **Windows PowerShell** (Start -> type "PowerShell").
+2. Go to the folder where you want the project, e.g. `cd D:\Work` (it will be created as
+   `D:\Work\CHAINAIM-TEAM-RESEARCH`). If you skip this, it goes in your home folder
+   (`C:\Users\<you>\CHAINAIM-TEAM-RESEARCH`). If you `cd` into an existing clone of this repo, that clone is used.
+3. Paste:
 ```powershell
 irm https://raw.githubusercontent.com/chainaim3003/CHAINAIM-TEAM-RESEARCH/main/ops/setup.ps1 -OutFile $env:TEMP\setup.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\setup.ps1
 ```
@@ -19,12 +23,13 @@ Want to see the plan first? Add ` -DryRun` at the end: nothing is changed.
 |---|---|---|
 | [1/10] Check this PC | `Windows OK, PowerShell 5.1...` | supported |
 | [2/10] Tools | `git found` / `uv found`, or an install | git + uv ready |
-| [3/10] Code | `git clone ...` (first time) or `git pull` | repo in `C:\ChainAIM\CHAINAIM-TEAM-RESEARCH` |
+| [3/10] Code | `git clone ...` (first time) or `git pull` | repo in `<your folder>\CHAINAIM-TEAM-RESEARCH` |
 | [4/10] Packages | `uv sync --frozen`, then the transcript tool's help text | packages installed |
 | [5/10] Knowledge base | (quiet) | `Transcript` + `links.txt` created |
 | [6/10] .env | `.env created` | optional keys file (empty is fine) |
 | [7/10] Tests | `== EVAL SUMMARY ==  N/N checks passed` + `ALL PASS` | code works on this PC |
 | [8/10] Scheduled tasks | `registered: ChainAIM-Research-Nightly` / `-Weekly` | automation on |
+| | or `already belong to another copy ... Kept them unchanged` | this PC already has another copy with tasks; add `-ReplaceTasks` to move them here |
 | [9/10] End-to-end test | `nightly/add link ... OK`, `OK: 1 prompt file(s), INDEX.md written` | a real link went all the way through |
 | [10/10] VS Code | VS Code opens on the repo | ready to use |
 

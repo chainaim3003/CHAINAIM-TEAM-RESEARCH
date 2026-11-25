@@ -549,6 +549,12 @@ fast-forwards the repo, `uv sync --frozen`, creates `Transcript\` + `links.txt`,
 end-to-end `add_link.ps1` test, opens VS Code. Idempotent; `-DryRun`, `-Uninstall`. Docs: root
 `README.md`, `SETUP.md`, `CMD.md`. `Transcript/` is git-ignored. `setup` eval suite (static checks).
 
+## PR-11 (done on `dev`, tag v2.1.1) - setup installs where you run it, protects existing tasks
+`ops/setup.ps1`: default install folder is `<current folder>\CHAINAIM-TEAM-RESEARCH` (the clone itself when
+run inside one; home folder when PowerShell starts in C:\Windows); scheduled tasks that already point to
+another copy on the PC are kept unless `-ReplaceTasks`. Docs (README, SETUP.md, CMD.md) updated; `setup`
+eval suite +1 check (no fixed C:\ChainAIM default anywhere; -ReplaceTasks guard present).
+
 ## 7. Summary table
 
 | PR | Branch | Phase | Item | Tag | Who |
