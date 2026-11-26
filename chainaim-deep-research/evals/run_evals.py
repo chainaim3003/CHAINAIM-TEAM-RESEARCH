@@ -933,6 +933,8 @@ def suite_app(fixtures: Path, verbose: bool) -> Result:
       5. run_script streams output, ends with "EXIT <code>", writes a log.
       6. Streamlit AppTest: page renders with no exception, shows the KB items, and the
          Add / Save buttons show errors (and write nothing) for empty input.
+      7. PR-12: after a successful extraction the Library updates at once and names the new item;
+         long prompts are shown in full; Deploy button hidden.
     """
     import importlib
     fails: List[str] = []
@@ -1070,6 +1072,62 @@ def suite_app(fixtures: Path, verbose: bool) -> Result:
                     os.environ["CHAINAIM_APP_KB"] = old
         checks.append(c)
 
+        # 7. PR-12 regression (bug a tester hit): after a SUCCESSFUL "Add and extract now" the Library
+        #    must list the new item at once (no F5), the Done message must name it, and a long prompt
+        #    must be shown in full (copy icon copies everything). The extraction step is replaced by a
+        #    small local script that writes what orchestrate.py writes - no network in CI.
+        c = []
+        try:
+            from streamlit.testing.v1 import AppTest
+        except ImportError as e:
+            c.append(f"streamlit not installed: {e}")
+        else:
+            long_prompt = "# Summarise this video transcript\n" + ("transcript line for the full-prompt check\n" * 300)
+            (kb / "kb" / "prompts").mkdir(parents=True, exist_ok=True)
+            (kb / "kb" / "prompts" / "Vid A [AAAAAAAAAAA].prompt.md").write_text(long_prompt, encoding="utf-8")
+            fake = (
+                "import json, pathlib, sys\n"
+                "kb = pathlib.Path(sys.argv[1])\n"
+                "(kb / 'kb' / 'full' / 'New Talk [NNNNNNNNNNN].txt').write_text('new transcript', encoding='utf-8')\n"
+                "m = json.loads((kb / 'manifest.json').read_text(encoding='utf-8'))\n"
+                "m['NNNNNNNNNNN'] = {'status': 'extracted', 'ts': '2026-11-26T10:00:00+00:00', 'title': 'New Talk',"
+                " 'stem': 'New Talk [NNNNNNNNNNN]', 'source_url': 'https://www.youtube.com/watch?v=NNNNNNNNNNN',"
+                " 'full_paths': {'txt': 'kb/full/New Talk [NNNNNNNNNNN].txt'}}\n"
+                "(kb / 'manifest.json').write_text(json.dumps(m), encoding='utf-8')\n"
+                "print('[ok] NNNNNNNNNNN')\n"
+            )
+            saved = (svc.extraction_args, svc.LOCK, svc.LOG_DIR)
+            svc.extraction_args = lambda kb_dir, list_file: [["-c", fake, str(kb_dir)], ["-c", "print('pack ok')"]]
+            svc.LOCK = Path(tds) / "app-test.lock"
+            svc.LOG_DIR = Path(tds) / "logs"
+            old = os.environ.get("CHAINAIM_APP_KB")
+            os.environ["CHAINAIM_APP_KB"] = str(kb)
+            try:
+                at = AppTest.from_file(str(PKG / "app" / "streamlit_app.py"), default_timeout=60).run()
+                n0 = next((s.value for s in at.subheader if s.value.startswith("Library")), "")
+                at.text_area(key="links_text").input("https://www.youtube.com/watch?v=NNNNNNNNNNN").run()
+                at.button(key="btn_extract").click().run()
+                n1 = next((s.value for s in at.subheader if s.value.startswith("Library")), "")
+                if at.exception:
+                    c.append(f"app raised: {at.exception[0].value}")
+                if n0 != "Library (3 items)" or n1 != "Library (4 items)":
+                    c.append(f"Library not refreshed right after extraction: before={n0!r} after={n1!r}")
+                if not any("New Talk" in m.value for m in at.success):
+                    c.append("Done message does not name the new item")
+                at.selectbox(key="lib_pick").set_value(next(e for e in svc.list_entries(svc.kb_paths(str(kb)))
+                                                             if e.key == "AAAAAAAAAAA")).run()
+                if not any(cd.value.strip() == long_prompt.strip() for cd in at.code):   # st.code drops the final newline
+                    c.append("long prompt is not shown in full")
+            finally:
+                svc.extraction_args, svc.LOCK, svc.LOG_DIR = saved
+                if old is None:
+                    os.environ.pop("CHAINAIM_APP_KB", None)
+                else:
+                    os.environ["CHAINAIM_APP_KB"] = old
+            if "--client.toolbarMode viewer" not in (PKG.parent / "ops" / "run_app.ps1").read_text(encoding="utf-8"):
+                c.append("run_app.ps1 does not hide the Deploy button (client.toolbarMode viewer)")
+        checks.append(c)
+
     passed = 0
     for n, c in enumerate(checks, 1):
         if c:
@@ -1077,8 +1135,8 @@ def suite_app(fixtures: Path, verbose: bool) -> Result:
         else:
             passed += 1
     if verbose:
-        print(f"  app -> {passed}/6 checks ok")
-    return passed, 6, fails
+        print(f"  app -> {passed}/7 checks ok")
+    return passed, 7, fails
 
 
 def _ps_params(text: str) -> List[str]:
