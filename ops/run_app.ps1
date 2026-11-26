@@ -4,7 +4,8 @@
 
 .DESCRIPTION
     Runs `uv run streamlit run app/streamlit_app.py` from chainaim-deep-research, bound to
-    127.0.0.1 only (not reachable from other computers), with Streamlit usage statistics off.
+    127.0.0.1 only (not reachable from other computers), with Streamlit usage statistics off and
+    the developer toolbar items (Deploy, Rerun, Clear cache) hidden (client.toolbarMode viewer, PR-12).
     Opens the page in your default browser a few seconds after start (unless -NoBrowser).
     The first start may take a minute while uv installs Streamlit. Stop the app with Ctrl+C.
     The app uses the same pipeline.lock as the scheduled tasks, so runs never overlap.
@@ -33,5 +34,5 @@ if (-not $NoBrowser) {
 }
 Set-Location -LiteralPath $script:PkgDir
 & $uvExe run streamlit run app/streamlit_app.py --server.address 127.0.0.1 --server.port $Port `
-    --server.headless true --browser.gatherUsageStats false
+    --server.headless true --browser.gatherUsageStats false --client.toolbarMode viewer
 exit $LASTEXITCODE

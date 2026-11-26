@@ -173,8 +173,9 @@ def pid_alive(pid: int) -> bool:
     return True
 
 
-def lock_holder(lock: Path = LOCK) -> Optional[int]:
+def lock_holder(lock: Optional[Path] = None) -> Optional[int]:
     """PID holding the run lock, or None (missing or stale lock)."""
+    lock = lock or LOCK   # read at call time, so tests can point LOCK elsewhere
     if not lock.exists():
         return None
     try:
@@ -184,14 +185,16 @@ def lock_holder(lock: Path = LOCK) -> Optional[int]:
     return pid if pid_alive(pid) else None
 
 
-def acquire_lock(lock: Path = LOCK) -> bool:
+def acquire_lock(lock: Optional[Path] = None) -> bool:
+    lock = lock or LOCK
     if lock_holder(lock) is not None:
         return False
     lock.write_text(str(os.getpid()), encoding="ascii")
     return True
 
 
-def release_lock(lock: Path = LOCK) -> None:
+def release_lock(lock: Optional[Path] = None) -> None:
+    lock = lock or LOCK
     try:
         if lock.exists() and lock.read_text(encoding="ascii").strip() == str(os.getpid()):
             lock.unlink()

@@ -555,6 +555,12 @@ run inside one; home folder when PowerShell starts in C:\Windows); scheduled tas
 another copy on the PC are kept unless `-ReplaceTasks`. Docs (README, SETUP.md, CMD.md) updated; `setup`
 eval suite +1 check (no fixed C:\ChainAIM default anywhere; -ReplaceTasks guard present).
 
+## PR-12 (done on `dev`, tag v2.1.2) - app fixes found by a tester
+Library / Save summary refresh right after "Add and extract now" and after saving (was stale until the
+next click - looked like "no result"); Done message names the new items; output kept in an expander;
+full prompt shown (copy icon copies everything, was cut at 4,000 chars); Deploy/Rerun hidden
+(`--client.toolbarMode viewer`); run lock path read at call time. `app` eval +1 check (mutation-verified).
+
 ## 7. Summary table
 
 | PR | Branch | Phase | Item | Tag | Who |
