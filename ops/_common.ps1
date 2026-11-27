@@ -13,6 +13,12 @@ $script:PkgDir   = Join-Path $script:RepoRoot "chainaim-deep-research"
 $script:LogDir   = Join-Path $script:RepoRoot "logs"
 $script:LockFile = Join-Path $script:RepoRoot "pipeline.lock"
 
+# PR-13: every Python child (uv run ...) writes UTF-8, and PowerShell reads it as UTF-8, on any PC's
+# code page. Setting the console encoding can fail when there is no console (hidden scheduled task).
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
+
 function Start-RunLog([string]$Name) {
     if (-not (Test-Path -LiteralPath $script:LogDir)) { New-Item -ItemType Directory -Path $script:LogDir | Out-Null }
     $script:LogFile = Join-Path $script:LogDir ("{0}-{1}.log" -f (Get-Date -Format "yyyy-MM-dd_HHmmss"), $Name)

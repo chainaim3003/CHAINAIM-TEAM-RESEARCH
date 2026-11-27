@@ -102,7 +102,7 @@ def extract(
     ok, output = throttle.run_with_retry(cmd)
     if not ok:
         return False, {}, output
-    text = output.rstrip("\n")
+    text = (output or "").rstrip("\n")
     if not text.strip():
         return False, {}, "empty transcript (video may lack captions)"
     paths = write_full(key=key, text=text, full_dir=full_dir, formats=formats, kb_dir=kb_dir, stem=stem)

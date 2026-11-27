@@ -247,8 +247,8 @@ def scheduled_tasks() -> List[Dict[str, str]]:
           "@{n='LastRun';e={$_.LastRunTime.ToString('yyyy-MM-dd HH:mm')}},LastTaskResult,"
           "@{n='NextRun';e={$_.NextRunTime.ToString('yyyy-MM-dd HH:mm')}} | ConvertTo-Json")
     try:
-        out = subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True,
-                             text=True, timeout=20).stdout.strip()
+        out = (subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True,
+                              text=True, encoding="utf-8", errors="replace", timeout=20).stdout or "").strip()
     except (OSError, subprocess.TimeoutExpired):
         return []
     if not out:

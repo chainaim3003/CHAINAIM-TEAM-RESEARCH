@@ -125,4 +125,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
+    from console import utf8_console  # PR-13: UTF-8 output on any Windows code page
+    utf8_console()
     raise SystemExit(run(build_parser().parse_args()))
