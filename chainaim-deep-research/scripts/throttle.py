@@ -13,11 +13,17 @@ No LLM. Shells out to deterministic skills via subprocess.
 
 from __future__ import annotations
 
+import os
 import random
 import subprocess
 import time
 from dataclasses import dataclass
 from typing import List, Sequence, Tuple
+
+
+def utf8_env() -> dict:
+    """Environment for child Python processes: force UTF-8 stdout/stderr (PEP 540 UTF-8 mode)."""
+    return dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
 
 
 @dataclass
@@ -62,10 +68,16 @@ class Throttle:
         for attempt in range(self.max_retries):
             self._sleep_before_call(attempt)
             try:
+                # PR-13: always UTF-8 on BOTH sides. Without this, Windows decodes the child's
+                # output with the PC's code page (e.g. cp1252) and transcripts containing
+                # characters like curly quotes or emoji crash with UnicodeDecodeError.
                 proc = subprocess.run(
                     cmd_list,
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    env=utf8_env(),
                     timeout=self.timeout_s,
                 )
             except subprocess.TimeoutExpired:
@@ -77,6 +89,6 @@ class Throttle:
                 return False, f"command not found: {exc}"
             self._last_call_ts = time.monotonic()
             if proc.returncode == 0:
-                return True, proc.stdout
+                return True, proc.stdout or ""
             last_err = (proc.stderr or proc.stdout or "").strip()
         return False, last_err

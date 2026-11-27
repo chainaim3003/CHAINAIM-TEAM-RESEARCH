@@ -1245,6 +1245,116 @@ def suite_setup(fixtures: Path, verbose: bool) -> Result:
     return passed, 6, fails
 
 
+def suite_encoding(fixtures: Path, verbose: bool) -> Result:
+    """PR-13: Unicode transcripts on any Windows code page (bug found on a second PC: cp1252 could not
+    decode the transcript tool's UTF-8 output -> UnicodeDecodeError, then 'NoneType' has no 'rstrip').
+    3 checks:
+      1. Throttle runs children with encoding="utf-8", errors="replace" and a UTF-8 child environment,
+         so the result never depends on the PC's code page.
+      2. Real round trip: a child printing curly quotes, a dash, accented letters and an emoji
+         comes back byte-for-byte equal (the 0x8d byte from the bug is part of this text's UTF-8).
+      3. youtube.extract treats a missing output as "empty transcript" instead of crashing, and the
+         transcript tool forces UTF-8 on its own stdout.
+      4. Simulated cp1252 PC: an emoji title prints fine after utf8_console() (control run fails).
+      5. Every entry point and the PowerShell launchers switch to UTF-8.
+    """
+    import subprocess as sp
+    import throttle as thr
+    fails: List[str] = []
+    checks: List[List[str]] = []
+    fast = Throttle(min_delay_s=0.0, jitter_s=0.0, max_retries=1, backoff_factor=1.0, timeout_s=60)
+
+    c: List[str] = []
+    seen: Dict[str, object] = {}
+    real_run = thr.subprocess.run
+
+    def spy(cmd, **kw):
+        seen.update(kw)
+        return sp.CompletedProcess(cmd, 0, stdout="ok\n", stderr="")
+    thr.subprocess.run = spy
+    try:
+        fast.run_with_retry(["x"])
+    finally:
+        thr.subprocess.run = real_run
+    env = seen.get("env") or {}
+    if seen.get("encoding") != "utf-8" or seen.get("errors") != "replace":
+        c.append(f"child output not decoded as UTF-8: encoding={seen.get('encoding')!r} errors={seen.get('errors')!r}")
+    if not isinstance(env, dict) or env.get("PYTHONIOENCODING") != "utf-8" or env.get("PYTHONUTF8") != "1":
+        c.append("child not started in UTF-8 mode (PYTHONIOENCODING / PYTHONUTF8)")
+    checks.append(c)
+
+    c = []
+    sample = "Curly “quotes” — café naïve Ångström č \U0001F389 done"
+    if b"\x8d" not in sample.encode("utf-8"):
+        c.append("test sample no longer contains the 0x8d byte from the bug")
+    ok, out = fast.run_with_retry([sys.executable, "-c", f"import sys; sys.stdout.write({sample!r} + '\\n')"])
+    if not ok or out.rstrip("\n") != sample:
+        c.append(f"round trip changed the text: ok={ok} out={out!r}")
+    checks.append(c)
+
+    c = []
+
+    class NoneThrottle:
+        def run_with_retry(self, cmd):
+            return True, None
+    with tempfile.TemporaryDirectory() as tds:
+        try:
+            r = yt.extract(key="AAAAAAAAAAA", source="AAAAAAAAAAA", transcript_script="x.py", full_dir=Path(tds) / "full",
+                           kb_dir=Path(tds), formats=["txt"], throttle=NoneThrottle())  # type: ignore[arg-type]
+            if r[0] or "empty transcript" not in r[2]:
+                c.append(f"missing output not reported as empty transcript: {r}")
+        except Exception as e:  # noqa: BLE001
+            c.append(f"missing output crashed extract: {type(e).__name__}: {e}")
+    tool = (PKG.parent / "agent-skills/skills/youtube-transcript/scripts/get_transcript.py").read_text(encoding="utf-8")
+    if 'reconfigure(encoding="utf-8"' not in tool:
+        c.append("transcript tool does not force UTF-8 stdout")
+    checks.append(c)
+
+    # 4. Simulate a PC whose pipes use cp1252 (like the HP): printing an emoji title must work after
+    #    utf8_console(). The control run WITHOUT it must fail - proving the simulation is real.
+    c = []
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONUTF8"}
+    env["PYTHONIOENCODING"] = "cp1252"
+    title = "Claude Code \U0001F525 tips \u2014 \u201cquoted\u201d"
+    code = "import sys; sys.path.insert(0, %r); %s print(%r)"
+    with_fix = sp.run([sys.executable, "-c", code % (str(PKG / "scripts"), "import console; console.utf8_console();", title)],
+                      capture_output=True, env=env)
+    without = sp.run([sys.executable, "-c", code % (str(PKG / "scripts"), "", title)], capture_output=True, env=env)
+    if without.returncode == 0:
+        c.append("simulation invalid: printing the emoji title did not fail under cp1252")
+    if with_fix.returncode != 0 or with_fix.stdout.decode("utf-8").strip() != title:
+        c.append(f"utf8_console did not make output safe: rc={with_fix.returncode} err={with_fix.stderr[-200:]!r}")
+    checks.append(c)
+
+    # 5. Every entry point switches its console to UTF-8, and the PowerShell launchers set UTF-8 for
+    #    the Python children they start (scheduled tasks, VS Code tasks, app, setup).
+    c = []
+    entries = ["scripts/orchestrate.py", "scripts/build_kb_pack.py", "scripts/digest.py",
+               "scripts/migrate_manifest.py", "scripts/rename_kb.py", "evals/run_evals.py"]
+    for e in entries:
+        main_block = (PKG / e).read_text(encoding="utf-8").split('if __name__ == "__main__":')[-1]
+        if "utf8_console()" not in main_block:
+            c.append(f"{e} does not call utf8_console() in its __main__ block")
+    gt = tool.split('if __name__ == "__main__":')[-1]
+    if 'reconfigure(encoding="utf-8"' not in gt:
+        c.append("get_transcript.py __main__ does not switch stdout/stderr to UTF-8")
+    for ps in ("ops/_common.ps1", "ops/setup.ps1"):
+        t = (PKG.parent / ps).read_text(encoding="utf-8")
+        if '$env:PYTHONIOENCODING = "utf-8"' not in t or '$env:PYTHONUTF8 = "1"' not in t:
+            c.append(f"{ps} does not set UTF-8 for Python children")
+    checks.append(c)
+
+    passed = 0
+    for n, c in enumerate(checks, 1):
+        if c:
+            fails.extend(f"encoding {n}: {m}" for m in c)
+        else:
+            passed += 1
+    if verbose:
+        print(f"  encoding -> {passed}/5 checks ok")
+    return passed, 5, fails
+
+
 SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "classify": suite_classify,
     "ingest": suite_ingest,
@@ -1259,6 +1369,7 @@ SUITES: Dict[str, Callable[[Path, bool], Result]] = {
     "papers": suite_papers,
     "app": suite_app,
     "setup": suite_setup,
+    "encoding": suite_encoding,
 }
 
 
@@ -1292,4 +1403,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from console import utf8_console  # PR-13: UTF-8 output on any Windows code page
+    utf8_console()
     raise SystemExit(main())

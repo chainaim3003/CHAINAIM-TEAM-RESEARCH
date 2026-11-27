@@ -118,6 +118,10 @@ def main(argv: List[str]) -> int:
         return 1
 
     out = sys.stdout
+    try:  # PR-13: captions are Unicode; never write them in the PC's code page
+        out.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
     for text, start in snippets:
         line = f"{fmt_timestamp(start)} {text}" if args.timestamps else text
         out.write(line + "\n")
@@ -125,4 +129,9 @@ def main(argv: List[str]) -> int:
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # PR-13: UTF-8 output on any Windows code page
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     raise SystemExit(main(sys.argv[1:]))

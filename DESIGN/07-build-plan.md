@@ -561,6 +561,15 @@ next click - looked like "no result"); Done message names the new items; output 
 full prompt shown (copy icon copies everything, was cut at 4,000 chars); Deploy/Rerun hidden
 (`--client.toolbarMode viewer`); run lock path read at call time. `app` eval +1 check (mutation-verified).
 
+## PR-13 (done on `dev`, tag v2.1.3) - Unicode transcripts on every Windows code page
+Found on a second PC: the transcript tool's UTF-8 output was decoded with the PC's code page (cp1252) ->
+UnicodeDecodeError, then AttributeError. `scripts/throttle.py` now runs children with encoding="utf-8",
+errors="replace" and PYTHONIOENCODING/PYTHONUTF8; `get_transcript.py` forces UTF-8 stdout;
+`extract/youtube.py` treats missing output as "empty transcript"; scheduled-task status read as UTF-8.
+Console too: new `scripts/console.py` (`utf8_console()`) called by every entry point, and `ops/_common.ps1`
++ `ops/setup.ps1` set PYTHONIOENCODING/PYTHONUTF8 + UTF-8 console, so emoji titles never crash nightly /
+VS Code / app runs. New `encoding` eval suite (5 checks, incl. a simulated cp1252 PC; mutation-verified).
+
 ## 7. Summary table
 
 | PR | Branch | Phase | Item | Tag | Who |

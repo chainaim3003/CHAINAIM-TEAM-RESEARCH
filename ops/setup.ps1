@@ -66,6 +66,11 @@ param(
     [switch]$DryRun, [switch]$Uninstall
 )
 $ErrorActionPreference = "Stop"
+# PR-13: every Python child (uv run ...) writes UTF-8, and PowerShell reads it as UTF-8, on any PC's
+# code page. Setting the console encoding can fail when there is no console (hidden scheduled task).
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false) } catch { }
 $script:Log = Join-Path $env:TEMP ("chainaim-setup-{0}.log" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
 $script:Results = New-Object System.Collections.ArrayList
 
